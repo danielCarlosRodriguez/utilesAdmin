@@ -1,0 +1,337 @@
+[{
+  "_id": {
+    "$oid": "697dcd060d35203adf265b91"
+  },
+  "refid": "075",
+  "categoría": "Cuadernola",
+  "descripción": "Cuadernola Mickey x 100 Hojas PAPIROS",
+  "detalle": "Con Stickers, Diseños surtidos no a elección",
+  "imagen": [
+    "075-01.png",
+    "075-02.png",
+    "075-03.png",
+    "075-04.png"
+  ],
+  "marca": "PAPIROS",
+  "precio": 85,
+  "stock": 40,
+  "sku": "075",
+  "activo": true,
+  "destacado": false,
+  "descuento": null,
+  "tags": [
+    ""
+  ]
+},
+{
+  "_id": {
+    "$oid": "697dcd060d35203adf265b92"
+  },
+  "refid": "076",
+  "categoría": "Cuadernola",
+  "descripción": "Cuadernola CAMPUS 96 Hojas Tapa Dura",
+  "detalle": "Diseños surtidos no a elección",
+  "imagen": [
+    "076-01.png",
+    "076-02.png"
+  ],
+  "marca": "CAMPUS",
+  "precio": 85,
+  "stock": 120,
+  "sku": "076",
+  "activo": true,
+  "destacado": false,
+  "descuento": null,
+  "tags": [
+    ""
+  ]
+},
+{
+  "_id": {
+    "$oid": "697dcd060d35203adf265b93"
+  },
+  "refid": "066",
+  "categoría": "Cuadernola",
+  "descripción": "Cuadernola ASAMBLEA 80 hojas",
+  "detalle": "Diseños surtidos no a elección",
+  "imagen": [
+    "066-01.png",
+    "066-02.png",
+    "066-03.png"
+  ],
+  "marca": "ASAMBLEA",
+  "precio": 60,
+  "stock": 60,
+  "sku": "066",
+  "activo": true,
+  "destacado": false,
+  "descuento": null,
+  "tags": [
+    ""
+  ]
+},
+{
+  "_id": {
+    "$oid": "697dcd060d35203adf265b94"
+  },
+  "refid": "044",
+  "categoría": "Cuaderno",
+  "descripción": "Cuaderno ASAMBLEA 48 Hojas",
+  "detalle": "Diseños surtidos no a elección",
+  "imagen": [
+    "044-01.png",
+    "044-02.png",
+    "044-03.png",
+    "044-04.png",
+    "044-05.png",
+    "044-06.png",
+    "044-07.png",
+    "044-08.png",
+    "044-09.png",
+    "044-10.png",
+    "044-11.png",
+    "044-12.png",
+    "044-13.png"
+  ],
+  "marca": "ASAMBLEA",
+  "precio": 25,
+  "stock": 120,
+  "sku": "044",
+  "activo": true,
+  "destacado": false,
+  "descuento": null,
+  "tags": [
+    ""
+  ]
+},
+{
+  "_id": {
+    "$oid": "697dcd060d35203adf265b95"
+  },
+  "refid": "341",
+  "categoría": "Lapicera",
+  "descripción": "Lapicera BIC Azul",
+  "imagen": [
+    "341-01.png"
+  ],
+  "marca": "BIC",
+  "precio": 22,
+  "stock": 100,
+  "sku": "341",
+  "activo": true,
+  "destacado": false,
+  "descuento": null,
+  "tags": [
+    ""
+  ]
+},
+{
+  "_id": {
+    "$oid": "697dcd060d35203adf265b96"
+  },
+  "refid": "342",
+  "categoría": "Lapicera",
+  "descripción": "Lapicera BIC Negra",
+  "imagen": [
+    "342-01.png"
+  ],
+  "marca": "BIC",
+  "precio": 22,
+  "stock": 50,
+  "sku": "342",
+  "activo": true,
+  "destacado": false,
+  "descuento": null,
+  "tags": [
+    ""
+  ]
+},
+{
+  "_id": {
+    "$oid": "697dcd060d35203adf265b97"
+  },
+  "refid": "343",
+  "categoría": "Lapicera",
+  "descripción": "Lapicera BIC Roja Round Stic",
+  "imagen": [
+    "343-01.png"
+  ],
+  "marca": "BIC",
+  "precio": 11,
+  "stock": 12,
+  "sku": "343",
+  "activo": true,
+  "destacado": false,
+  "descuento": null,
+  "tags": [
+    ""
+  ]
+},
+{
+  "_id": {
+    "$oid": "697dcd060d35203adf265b98"
+  },
+  "refid": "344",
+  "categoría": "Lápices",
+  "descripción": "Lápices HB N°2 BIC Evolution caja x 12 un.",
+  "imagen": [
+    "344-01.png"
+  ],
+  "marca": "BIC",
+  "precio": 125,
+  "stock": 4,
+  "sku": "344",
+  "activo": true,
+  "destacado": false,
+  "descuento": null,
+  "tags": [
+    ""
+  ]
+},
+{
+  "_id": {
+    "$oid": "697dcd060d35203adf265b99"
+  },
+  "refid": "345",
+  "categoría": "Lápices",
+  "descripción": "Lápiz HB N°2 BIC Evolution x 1 un.",
+  "imagen": [
+    "345-01.png"
+  ],
+  "marca": "BIC",
+  "precio": 14,
+  "stock": 48,
+  "sku": "345",
+  "activo": true,
+  "destacado": false,
+  "descuento": null,
+  "tags": [
+    ""
+  ]
+},
+{
+  "_id": {
+    "$oid": "697dcd060d35203adf265b9a"
+  },
+  "refid": "347",
+  "categoría": "Cola",
+  "descripción": "Cola Vinílica BIC 40g",
+  "imagen": [
+    "347-01.png"
+  ],
+  "marca": "BIC",
+  "precio": 40,
+  "stock": 24,
+  "sku": "347",
+  "activo": true,
+  "destacado": false,
+  "descuento": null,
+  "tags": [
+    ""
+  ]
+},
+{
+  "_id": {
+    "$oid": "697dcd060d35203adf265b9b"
+  },
+  "refid": "348",
+  "categoría": "Corrector",
+  "descripción": "Corrector Pincel BIC",
+  "imagen": [
+    "348-01.png"
+  ],
+  "marca": "BIC",
+  "precio": 65,
+  "stock": 12,
+  "sku": "348",
+  "activo": true,
+  "destacado": false,
+  "descuento": null,
+  "tags": [
+    ""
+  ]
+},
+{
+  "_id": {
+    "$oid": "697dcd060d35203adf265b9c"
+  },
+  "refid": "346",
+  "categoría": "Lápices",
+  "descripción": "Lápices de colores BIC Evolution caja x 12 un. + 4 Lápices",
+  "imagen": [
+    "346-01.png"
+  ],
+  "marca": "BIC",
+  "precio": 100,
+  "stock": 6,
+  "sku": "346",
+  "activo": true,
+  "destacado": false,
+  "descuento": null,
+  "tags": [
+    ""
+  ]
+},
+{
+  "_id": {
+    "$oid": "697dcd060d35203adf265b9d"
+  },
+  "refid": "150",
+  "categoría": "Lápices",
+  "descripción": "Lápices de colores CAMPUS caja x 24 un.",
+  "imagen": [
+    "150-01.png"
+  ],
+  "marca": "CAMPUS",
+  "precio": 130,
+  "stock": 50,
+  "sku": "150",
+  "activo": true,
+  "destacado": false,
+  "descuento": null,
+  "tags": [
+    ""
+  ]
+},
+{
+  "_id": {
+    "$oid": "697dcd060d35203adf265b9e"
+  },
+  "refid": "172",
+  "categoría": "Lápices",
+  "descripción": "Lápices HB TEORÍA+ caja x 6 un.",
+  "imagen": [
+    "172-01.png"
+  ],
+  "marca": "TEORÍA+",
+  "precio": 49,
+  "stock": 50,
+  "sku": "172",
+  "activo": true,
+  "destacado": false,
+  "descuento": null,
+  "tags": [
+    ""
+  ]
+},
+{
+  "_id": {
+    "$oid": "697dcd060d35203adf265b9f"
+  },
+  "refid": "349",
+  "categoría": "Lápices",
+  "descripción": "Lápiz HB TEORÍA+ x 1 un.",
+  "imagen": [
+    "349-01.png"
+  ],
+  "marca": "TEORÍA+",
+  "precio": 11,
+  "stock": 300,
+  "sku": "349",
+  "activo": true,
+  "destacado": false,
+  "descuento": null,
+  "tags": [
+    ""
+  ]
+}]

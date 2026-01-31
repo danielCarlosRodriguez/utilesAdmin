@@ -1,0 +1,112 @@
+.pastel-chip-1 { background-color: #e3f2fd; color: #1e3a8a; }
+.pastel-chip-1:hover { background-color: #dbeafe; }
+
+.pastel-chip-2 { background-color: #e0f2f1; color: #065f46; }
+.pastel-chip-2:hover { background-color: #ccfbf1; }
+
+.pastel-chip-3 { background-color: #f3e5f5; color: #6b21a8; }
+.pastel-chip-3:hover { background-color: #f5d0fe; }
+
+.pastel-chip-4 { background-color: #fff9c4; color: #854d0e; }
+.pastel-chip-4:hover { background-color: #fef3c7; }
+
+.pastel-chip-5 { background-color: #fce4ec; color: #9f1239; }
+.pastel-chip-5:hover { background-color: #fbcfe8; }
+
+.pastel-chip-6 { background-color: #e8f5e9; color: #166534; }
+.pastel-chip-6:hover { background-color: #dcfce7; }
+
+.pastel-chip-7 { background-color: #e1f5fe; color: #0f4c81; }
+.pastel-chip-7:hover { background-color: #bae6fd; }
+
+.pastel-chip-8 { background-color: #f9fbe7; color: #3f6212; }
+.pastel-chip-8:hover { background-color: #ecfccb; }
+
+.pastel-chip-9 { background-color: #f3e5f5; color: #7e22ce; }
+.pastel-chip-9:hover { background-color: #e9d5ff; }
+
+.pastel-chip-10 { background-color: #ffe4e6; color: #9f1239; }
+.pastel-chip-10:hover { background-color: #fecdd3; }
+
+.pastel-chip-active { background-color: #dbeafe; color: #1d4ed8; }
+.pastel-chip-active:hover { background-color: #bfdbfe; }
+
+.card-title {
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  min-height: 2.8em;
+}
+
+/* Toast animations */
+@keyframes slide-up {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.animate-slide-up {
+  animation: slide-up 0.3s ease-out forwards;
+}
+
+/* Skeleton pulse animation */
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+.animate-pulse {
+  animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Fade in animation */
+@keyframes fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
+.animate-fade-in {
+  animation: fade-in 0.3s ease-out forwards;
+}
+
+/* Zoom in animation for image modal */
+@keyframes zoom-in {
+  from {
+    opacity: 0;
+    transform: scale(0.9);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.animate-zoom-in {
+  animation: zoom-in 0.3s ease-out forwards;
+}
+
+/* Accessibility: Respect reduced motion preferences */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
