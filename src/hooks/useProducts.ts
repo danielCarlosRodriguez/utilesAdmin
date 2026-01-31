@@ -9,7 +9,8 @@ export interface Product {
   id: string;
   refid: string;
   title: string;
-  category: string;
+  category?: string;
+  categoryId?: string;
   price: number;
   image: string;
   images: string[];
@@ -26,7 +27,8 @@ export interface Product {
 interface RawMongoProduct {
   _id?: string;
   refid: string;
-  categoría: string;
+  categoría?: string;
+  categoryId?: string | { $oid?: string };
   descripción: string;
   detalle?: string;
   imagen: string[];
@@ -56,12 +58,16 @@ interface UseProductReturn {
 
 // Normaliza producto de MongoDB al formato interno
 function normalizeProduct(item: RawMongoProduct): Product {
+  const resolvedCategoryId = typeof item.categoryId === 'string'
+    ? item.categoryId
+    : item.categoryId?.$oid;
   return {
     _id: item._id,
     id: String(item.refid),
     refid: String(item.refid),
     title: item.descripción,
     category: item.categoría,
+    categoryId: resolvedCategoryId,
     price: item.precio,
     image: item.imagen?.[0] ? `/imagenes/productos/${item.imagen[0]}` : '',
     images: item.imagen || [],

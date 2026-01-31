@@ -1,0 +1,647 @@
+import { useEffect, useState } from 'react';
+import EmptyState from '../components/EmptyState.tsx';
+import { useProducts, type Product } from '../hooks/useProducts.ts';
+import { useCategories } from '../hooks/useCategories.ts';
+import { useCreateProduct, useDeleteProduct, useUpdateProduct } from '../hooks/useProductMutations.ts';
+
+type ProductFormState = {
+  refid: string;
+  categoryId: string;
+  descripción: string;
+  detalle: string;
+  imagen: string;
+  marca: string;
+  precio: string;
+  stock: string;
+  activo: boolean;
+  destacado: boolean;
+  descuento: string;
+  tags: string;
+};
+
+const emptyForm: ProductFormState = {
+  refid: '',
+  categoryId: '',
+  descripción: '',
+  detalle: '',
+  imagen: '',
+  marca: '',
+  precio: '',
+  stock: '',
+  activo: true,
+  destacado: false,
+  descuento: '',
+  tags: ''
+};
+
+const Products = () => {
+  const { products, isLoading, error, refetch } = useProducts({
+    activeOnly: false,
+    inStockOnly: false
+  });
+  const {
+    categories,
+    isLoading: isLoadingCategories,
+    error: categoriesError,
+    refetch: refetchCategories
+  } = useCategories({ activeOnly: true });
+  const { createProduct, isLoading: isCreating, error: createError } = useCreateProduct();
+  const { updateProduct, isLoading: isUpdating, error: updateError } = useUpdateProduct();
+  const { deleteProduct, isLoading: isDeleting, error: deleteError } = useDeleteProduct();
+  const [isModalOpen, setIsModalOpen] = useState(false);
+  const [mode, setMode] = useState<'create' | 'edit'>('create');
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
+  const [formState, setFormState] = useState<ProductFormState>(emptyForm);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<Product | null>(null);
+  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
+  const [successTitle, setSuccessTitle] = useState('');
+  const [successMessage, setSuccessMessage] = useState('');
+  const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
+  const [errorTitle, setErrorTitle] = useState('');
+  const [errorMessage, setErrorMessage] = useState('');
+
+  const isSubmitting = isCreating || isUpdating;
+  const formError = mode === 'create' ? createError : updateError;
+  const [deletingId, setDeletingId] = useState<string | null>(null);
+
+  const openCreateModal = () => {
+    setMode('create');
+    setEditingProduct(null);
+    setFormState(emptyForm);
+    setIsModalOpen(true);
+  };
+
+  const openEditModal = (product: Product) => {
+    const matchedCategoryId = categories.find((category) => category.nombre === product.category)?.id || '';
+    setMode('edit');
+    setEditingProduct(product);
+    setFormState({
+      refid: product.refid || product.id,
+      categoryId: product.categoryId || matchedCategoryId,
+      descripción: product.title || '',
+      detalle: product.detail || '',
+      imagen: (product.images || []).join(', '),
+      marca: product.brand || '',
+      precio: Number.isFinite(product.price) ? String(product.price) : '',
+      stock: Number.isFinite(product.stock) ? String(product.stock) : '',
+      activo: Boolean(product.activo),
+      destacado: Boolean(product.destacado),
+      descuento: product.descuento === null || product.descuento === undefined
+        ? ''
+        : String(product.descuento),
+      tags: (product.tags || []).join(', ')
+    });
+    setIsModalOpen(true);
+  };
+
+  const closeModal = () => {
+    setIsModalOpen(false);
+  };
+
+  const closeSuccessModal = () => {
+    setIsSuccessModalOpen(false);
+  };
+
+  const closeErrorModal = () => {
+    setIsErrorModalOpen(false);
+  };
+
+  useEffect(() => {
+    if (!formError) return;
+    setErrorTitle(mode === 'create' ? 'Error al crear producto' : 'Error al actualizar producto');
+    setErrorMessage(formError);
+    setIsErrorModalOpen(true);
+  }, [formError, mode]);
+
+  useEffect(() => {
+    if (!deleteError) return;
+    setErrorTitle('Error al eliminar producto');
+    setErrorMessage(deleteError);
+    setIsErrorModalOpen(true);
+  }, [deleteError]);
+
+  const handleChange = (field: keyof ProductFormState, value: string | boolean) => {
+    setFormState(prev => ({ ...prev, [field]: value }));
+  };
+
+  const handleSubmit = async (event: React.FormEvent) => {
+    event.preventDefault();
+
+    const payload = {
+      refid: formState.refid.trim(),
+      categoryId: formState.categoryId || undefined,
+      descripción: formState.descripción.trim(),
+      detalle: formState.detalle.trim(),
+      imagen: formState.imagen
+        .split(',')
+        .map(item => item.trim())
+        .filter(Boolean),
+      marca: formState.marca.trim(),
+      precio: Number(formState.precio) || 0,
+      stock: Number(formState.stock) || 0,
+      sku: formState.refid.trim(),
+      activo: formState.activo,
+      destacado: formState.destacado,
+      descuento: formState.descuento === '' ? null : Number(formState.descuento),
+      tags: formState.tags
+        .split(',')
+        .map(item => item.trim())
+        .filter(Boolean)
+    };
+
+    if (mode === 'create') {
+      const created = await createProduct(payload);
+      if (created) {
+        await refetch();
+        closeModal();
+        setSuccessTitle('Producto creado');
+        setSuccessMessage('El producto se creó correctamente.');
+        setIsSuccessModalOpen(true);
+      }
+      return;
+    }
+
+    const id = editingProduct?._id || editingProduct?.id;
+    if (!id) return;
+    const updated = await updateProduct(id, payload);
+    if (updated) {
+      await refetch();
+      closeModal();
+      setSuccessTitle('Producto actualizado');
+      setSuccessMessage('El producto se actualizó correctamente.');
+      setIsSuccessModalOpen(true);
+    }
+  };
+
+  const handleDelete = (product: Product) => {
+    setPendingDelete(product);
+    setIsDeleteModalOpen(true);
+  };
+
+  const closeDeleteModal = () => {
+    setIsDeleteModalOpen(false);
+    setPendingDelete(null);
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    const id = pendingDelete._id || pendingDelete.id;
+    if (!id) return;
+    setDeletingId(id);
+    const ok = await deleteProduct(id);
+    setDeletingId(null);
+    if (ok) {
+      await refetch();
+      closeDeleteModal();
+    }
+  };
+
+  return (
+    <div className="max-w-7xl mx-auto px-4 md:px-8 py-12">
+      <div className="flex items-center justify-between mb-6">
+        <h2 className="text-2xl font-black text-slate-800 tracking-tight">Productos</h2>
+        <button
+          type="button"
+          onClick={openCreateModal}
+          className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-primary/90"
+        >
+          <span className="material-symbols-outlined text-sm">add</span>
+          Crear Productos
+        </button>
+      </div>
+
+      {isLoading && (
+        <div className="text-sm text-slate-500">Cargando productos...</div>
+      )}
+
+      {error && !isLoading && (
+        <EmptyState
+          icon="error"
+          title="Error al cargar productos"
+          description={error}
+          actionLabel="Reintentar"
+          onAction={refetch}
+        />
+      )}
+
+      {!isLoading && !error && products.length === 0 && (
+        <EmptyState
+          icon="inventory_2"
+          title="Sin productos"
+          description="No hay productos disponibles para mostrar."
+          actionLabel="Recargar"
+          onAction={refetch}
+        />
+      )}
+
+      {!isLoading && !error && products.length > 0 && (
+        <div className="overflow-x-auto rounded-2xl border border-gray-200 shadow-sm">
+          <table className="w-full border-collapse text-sm border border-gray-200">
+            <thead className="bg-gray-100 text-slate-600 border-b border-gray-200">
+              <tr className="text-left">
+                <th className="px-4 py-3 font-semibold border-r border-gray-200">Imagen</th>
+                <th className="px-4 py-3 font-semibold border-r border-gray-200">Ref</th>
+                <th className="px-4 py-3 font-semibold border-r border-gray-200">Categoría</th>
+                <th className="px-4 py-3 font-semibold border-r border-gray-200">Descripción</th>
+                <th className="px-4 py-3 font-semibold border-r border-gray-200">Stock</th>
+                <th className="px-4 py-3 font-semibold border-r border-gray-200">Precio</th>
+                <th className="px-4 py-3 font-semibold border-r border-gray-200">Activo</th>
+                <th className="px-4 py-3 font-semibold border-r border-gray-200">Destacado</th>
+                <th className="px-4 py-3 font-semibold border-r border-gray-200">Descuento</th>
+                <th className="px-4 py-3 font-semibold border-r border-gray-200">Editar</th>
+                <th className="px-4 py-3 font-semibold">Eliminar</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-200">
+              {products.map((product) => (
+                <tr key={product.id} className="hover:bg-gray-50/70">
+                  <td className="px-4 py-3 border-r border-gray-200">
+                    {product.image ? (
+                      <img
+                        src={product.image}
+                        alt={product.title}
+                        className="h-12 w-12 rounded-lg object-cover border border-gray-100"
+                      />
+                    ) : (
+                      <div className="h-12 w-12 rounded-lg bg-gray-100 border border-gray-100" />
+                    )}
+                  </td>
+                  <td className="px-4 py-3 font-medium text-slate-700 border-r border-gray-200">{product.refid || product.id}</td>
+                  <td className="px-4 py-3 text-slate-600 border-r border-gray-200">
+                    {categories.find((category) => category.id === product.categoryId)?.nombre || product.category}
+                  </td>
+                  <td className="px-4 py-3 text-slate-800 border-r border-gray-200">
+                    <div className="font-medium text-slate-800">{product.title}</div>
+                    <div className="text-xs font-normal text-slate-500">{product.brand}</div>
+                  </td>
+                  <td className="px-4 py-3 text-slate-700 border-r border-gray-200">{product.stock}</td>
+                  <td className="px-4 py-3 text-slate-700 border-r border-gray-200">
+                    {Number.isFinite(product.price) ? `$${product.price}` : '-'}
+                  </td>
+                  <td className="px-4 py-3 border-r border-gray-200">
+                    <span
+                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
+                        product.activo
+                          ? 'bg-emerald-100 text-emerald-700'
+                          : 'bg-gray-200 text-gray-600'
+                      }`}
+                    >
+                      {product.activo ? 'Sí' : 'No'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 border-r border-gray-200">
+                    <span
+                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
+                        product.destacado
+                          ? 'bg-amber-100 text-amber-700'
+                          : 'bg-gray-200 text-gray-600'
+                      }`}
+                    >
+                      {product.destacado ? 'Sí' : 'No'}
+                    </span>
+                  </td>
+                  <td className="px-4 py-3 text-slate-700 border-r border-gray-200">
+                    {product.descuento ?? '-'}
+                  </td>
+                  <td className="px-4 py-3 border-r border-gray-200">
+                    <button
+                      type="button"
+                      onClick={() => openEditModal(product)}
+                      className="inline-flex items-center justify-center rounded-lg border border-gray-200 p-2 text-slate-600 hover:bg-gray-50 hover:text-primary transition-colors"
+                      aria-label="Editar producto"
+                    >
+                      <span className="material-symbols-outlined text-base">edit</span>
+                    </button>
+                  </td>
+                  <td className="px-4 py-3">
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(product)}
+                      disabled={isDeleting && deletingId === (product._id || product.id)}
+                      className="inline-flex items-center justify-center rounded-lg border border-gray-200 p-2 text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors"
+                      aria-label="Eliminar producto"
+                    >
+                      <span className="material-symbols-outlined text-base">delete</span>
+                    </button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {deleteError && (
+        <div className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+          {deleteError}
+        </div>
+      )}
+
+      {isModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-3xl rounded-2xl bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+              <h3 className="text-lg font-semibold text-slate-800">
+                {mode === 'create' ? 'Crear producto' : 'Editar producto'}
+              </h3>
+              <button
+                type="button"
+                onClick={closeModal}
+                className="rounded-lg p-2 text-slate-500 hover:bg-gray-100"
+                aria-label="Cerrar"
+              >
+                <span className="material-symbols-outlined text-base">close</span>
+              </button>
+            </div>
+            <form onSubmit={handleSubmit} className="px-6 py-5">
+              <div className="grid gap-4 md:grid-cols-2">
+                <label className="text-sm text-slate-600">
+                  RefId
+                  <input
+                    type="text"
+                    value={formState.refid}
+                    onChange={(event) => handleChange('refid', event.target.value)}
+                    className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                    required
+                  />
+                </label>
+                <label className="text-sm text-slate-600">
+                  SKU
+                  <input
+                    type="text"
+                    value={formState.refid}
+                    className="mt-1 w-full rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-slate-500"
+                    readOnly
+                  />
+                </label>
+                <label className="text-sm text-slate-600 md:col-span-2">
+                  Descripción
+                  <input
+                    type="text"
+                    value={formState.descripción}
+                    onChange={(event) => handleChange('descripción', event.target.value)}
+                    className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                    required
+                  />
+                </label>
+                <label className="text-sm text-slate-600 md:col-span-2">
+                  Detalle
+                  <input
+                    type="text"
+                    value={formState.detalle}
+                    onChange={(event) => handleChange('detalle', event.target.value)}
+                    className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                  />
+                </label>
+                <label className="text-sm text-slate-600">
+                  Categoría
+                  <select
+                    value={formState.categoryId}
+                    onChange={(event) => handleChange('categoryId', event.target.value)}
+                    className="mt-1 w-full rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm"
+                    required
+                    disabled={isLoadingCategories}
+                  >
+                    <option value="">
+                      {isLoadingCategories ? 'Cargando...' : 'Selecciona una categoría'}
+                    </option>
+                    {categories.map((category) => (
+                      <option key={category.id} value={category.id}>
+                        {category.nombre}
+                      </option>
+                    ))}
+                  </select>
+                  {categoriesError && (
+                    <div className="mt-1 flex items-center gap-2 text-xs text-red-600">
+                      <span>{categoriesError}</span>
+                      <button
+                        type="button"
+                        onClick={refetchCategories}
+                        className="text-xs font-semibold text-primary hover:underline"
+                      >
+                        Reintentar
+                      </button>
+                    </div>
+                  )}
+                </label>
+                <label className="text-sm text-slate-600">
+                  Marca
+                  <input
+                    type="text"
+                    value={formState.marca}
+                    onChange={(event) => handleChange('marca', event.target.value)}
+                    className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                    required
+                  />
+                </label>
+                <label className="text-sm text-slate-600">
+                  Precio
+                  <input
+                    type="number"
+                    value={formState.precio}
+                    onChange={(event) => handleChange('precio', event.target.value)}
+                    className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                    min="0"
+                  />
+                </label>
+                <label className="text-sm text-slate-600">
+                  Stock
+                  <input
+                    type="number"
+                    value={formState.stock}
+                    onChange={(event) => handleChange('stock', event.target.value)}
+                    className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                    min="0"
+                  />
+                </label>
+                <label className="text-sm text-slate-600">
+                  Descuento
+                  <input
+                    type="number"
+                    value={formState.descuento}
+                    onChange={(event) => handleChange('descuento', event.target.value)}
+                    className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                    min="0"
+                  />
+                </label>
+                <label className="text-sm text-slate-600">
+                  Imágenes (separadas por coma)
+                  <input
+                    type="text"
+                    value={formState.imagen}
+                    onChange={(event) => handleChange('imagen', event.target.value)}
+                    className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                  />
+                </label>
+                <label className="text-sm text-slate-600 md:col-span-2">
+                  Tags (separadas por coma)
+                  <input
+                    type="text"
+                    value={formState.tags}
+                    onChange={(event) => handleChange('tags', event.target.value)}
+                    className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                  />
+                </label>
+                <label className="flex items-center gap-3 text-sm text-slate-600">
+                  <span>Activo</span>
+                  <button
+                    type="button"
+                    role="switch"
+                    aria-checked={formState.activo}
+                    onClick={() => handleChange('activo', !formState.activo)}
+                    className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                      formState.activo ? 'bg-primary' : 'bg-gray-300'
+                    }`}
+                  >
+                    <span
+                      className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
+                        formState.activo ? 'translate-x-5' : 'translate-x-1'
+                      }`}
+                    />
+                  </button>
+                </label>
+                <label className="flex items-center gap-2 text-sm text-slate-600">
+                  <input
+                    type="checkbox"
+                    checked={formState.destacado}
+                    onChange={(event) => handleChange('destacado', event.target.checked)}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                  Destacado
+                </label>
+              </div>
+
+              {formError && (
+                <div className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+                  {formError}
+                </div>
+              )}
+
+              <div className="mt-6 flex items-center justify-end gap-3">
+                <button
+                  type="button"
+                  onClick={closeModal}
+                  className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-slate-600 hover:bg-gray-50"
+                >
+                  Cancelar
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="rounded-lg bg-primary px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-primary/90 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+                  {isSubmitting ? 'Guardando...' : 'Guardar'}
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+              <h3 className="text-lg font-semibold text-slate-800">Eliminar producto</h3>
+              <button
+                type="button"
+                onClick={closeDeleteModal}
+                className="rounded-lg p-2 text-slate-500 hover:bg-gray-100"
+                aria-label="Cerrar"
+              >
+                <span className="material-symbols-outlined text-base">close</span>
+              </button>
+            </div>
+            <div className="px-6 py-5 text-sm text-slate-600">
+              ¿Seguro que quieres eliminar{' '}
+              <span className="font-semibold text-slate-800">
+                {pendingDelete?.title || pendingDelete?.id}
+              </span>
+              ?
+            </div>
+            <div className="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4">
+              <button
+                type="button"
+                onClick={closeDeleteModal}
+                className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-slate-600 hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                disabled={isDeleting}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isDeleting ? 'Eliminando...' : 'Eliminar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isSuccessModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+              <h3 className="text-lg font-semibold text-slate-800">{successTitle}</h3>
+              <button
+                type="button"
+                onClick={closeSuccessModal}
+                className="rounded-lg p-2 text-slate-500 hover:bg-gray-100"
+                aria-label="Cerrar"
+              >
+                <span className="material-symbols-outlined text-base">close</span>
+              </button>
+            </div>
+            <div className="px-6 py-5 text-sm text-slate-600">
+              {successMessage}
+            </div>
+            <div className="flex items-center justify-end border-t border-gray-200 px-6 py-4">
+              <button
+                type="button"
+                onClick={closeSuccessModal}
+                className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-500"
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {isErrorModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+              <h3 className="text-lg font-semibold text-slate-800">{errorTitle}</h3>
+              <button
+                type="button"
+                onClick={closeErrorModal}
+                className="rounded-lg p-2 text-slate-500 hover:bg-gray-100"
+                aria-label="Cerrar"
+              >
+                <span className="material-symbols-outlined text-base">close</span>
+              </button>
+            </div>
+            <div className="px-6 py-5 text-sm text-slate-600">
+              {errorMessage}
+            </div>
+            <div className="flex items-center justify-end border-t border-gray-200 px-6 py-4">
+              <button
+                type="button"
+                onClick={closeErrorModal}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-500"
+              >
+                Entendido
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
+export default Products;
