@@ -150,26 +150,6 @@ const HomePage = ({ searchTerm = '' }) => {
 
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-12">
-      <section className="relative h-[550px] rounded-[3rem] overflow-hidden mb-16 shadow-2xl shadow-blue-100/50 group">
-        <div
-          className="absolute inset-0 bg-cover bg-center transition-transform duration-1000 group-hover:scale-105"
-          style={{ backgroundImage: `linear-gradient(to right, rgba(0,0,0,0.6), rgba(0,0,0,0.1)), url('/imagenes/hero-bg.jpg')` }}
-        />
-        <div className="absolute inset-0 flex flex-col items-start justify-center text-left px-12 md:px-24">
-          <span className="bg-white/20 backdrop-blur-md text-white px-4 py-1.5 rounded-full text-xs font-bold tracking-widest uppercase mb-6 border border-white/30">
-           Colección 2026
-          </span>
-          <h2 className="text-white text-5xl md:text-7xl font-black mb-6 tracking-tight leading-[1.1]">
-            Back to School<br />
-            <span className="text-pastel-yellow italic">Specials</span>
-          </h2>
-          <p className="text-white/80 text-lg md:text-xl font-medium mb-10 max-w-lg leading-relaxed">
-           Artículos escolares
-          </p>
-
-        </div>
-      </section>
-
       <section className="mb-8">
         <div className="flex items-center justify-between mb-8 px-2">
           <h3 className="text-2xl font-black text-slate-800 tracking-tight">Categorías</h3>
