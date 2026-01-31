@@ -1,0 +1,26 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(cat:*)",
+      "Bash(rm:*)",
+      "Bash(npm uninstall:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm install:*)",
+      "Bash(timeout:*)",
+      "Bash(curl:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nInitial commit: Backend setup con Express, MongoDB y Passport.js\n\n- Configuración inicial del servidor Express\n- Conexión a MongoDB Atlas\n- Modelo de Usuario con Mongoose\n- Autenticación con Google OAuth usando Passport.js\n- Middleware de autenticación JWT\n- Rutas de autenticación (login, logout, me)\n- Variables de entorno configuradas\n- Documentación de setup de Google OAuth\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push:*)",
+      "Bash(cmd /c \"ren \"\"ecommerce Back\"\" ecommerceBack\")",
+      "Bash(npm run seed:*)",
+      "Bash(python:*)",
+      "Bash(netstat:*)",
+      "Bash(taskkill:*)",
+      "Bash(start http://localhost:5000/api/auth/google)",
+      "Bash(npm run build:*)",
+      "Bash(start:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}
