@@ -7,6 +7,7 @@ import HomePage from './pages/HomePage.tsx';
 import ProductDetail from './pages/ProductDetail.tsx';
 import CategoryPage from './pages/CategoryPage.tsx';
 import Categories from './pages/Categories.tsx';
+import Orders from './pages/Orders.tsx';
 import CartPage from './pages/CartPage.tsx';
 import CheckoutPage from './pages/CheckoutPage.tsx';
 import Products from './pages/Products.tsx';
@@ -43,7 +44,7 @@ const AppContent = () => {
           <Route path="/" element={<HomePage searchTerm={searchTerm} />} />
           <Route path="/products" element={<Products />} />
           <Route path="/category" element={<Categories />} />
-          <Route path="/orders" element={<div className="max-w-7xl mx-auto px-4 md:px-8 py-12" />} />
+          <Route path="/orders" element={<Orders />} />
           <Route path="/usuarios" element={<div className="max-w-7xl mx-auto px-4 md:px-8 py-12" />} />
           <Route path="/product/:refid" element={<ProductDetail />} />
           <Route path="/category/:categoryName" element={<CategoryPage />} />
