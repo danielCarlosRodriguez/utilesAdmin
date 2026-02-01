@@ -48,6 +48,7 @@ const Products = () => {
   const { createProduct, isLoading: isCreating, error: createError } = useCreateProduct();
   const { updateProduct, isLoading: isUpdating, error: updateError } = useUpdateProduct();
   const { deleteProduct, isLoading: isDeleting, error: deleteError } = useDeleteProduct();
+  const [localProducts, setLocalProducts] = useState<Product[]>([]);
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [mode, setMode] = useState<'create' | 'edit'>('create');
   const [editingProduct, setEditingProduct] = useState<Product | null>(null);
@@ -64,11 +65,25 @@ const Products = () => {
   const isSubmitting = isCreating || isUpdating;
   const formError = mode === 'create' ? createError : updateError;
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [togglingId, setTogglingId] = useState<string | null>(null);
+
+  useEffect(() => {
+    setLocalProducts(products);
+  }, [products]);
+
+  const getNextRefId = (): string => {
+    if (products.length === 0) return '1';
+    const maxRefId = products.reduce((max, product) => {
+      const refidNum = Number(product.refid ?? product.id);
+      return Number.isFinite(refidNum) && refidNum > max ? refidNum : max;
+    }, 0);
+    return String(maxRefId + 1);
+  };
 
   const openCreateModal = () => {
     setMode('create');
     setEditingProduct(null);
-    setFormState(emptyForm);
+    setFormState({ ...emptyForm, refid: getNextRefId() });
     setIsModalOpen(true);
   };
 
@@ -78,6 +93,29 @@ const Products = () => {
     setEditingProduct(product);
     setFormState({
       refid: product.refid || product.id,
+      categoryId: product.categoryId || matchedCategoryId,
+      descripción: product.title || '',
+      detalle: product.detail || '',
+      imagen: (product.images || []).join(', '),
+      marca: product.brand || '',
+      precio: Number.isFinite(product.price) ? String(product.price) : '',
+      stock: Number.isFinite(product.stock) ? String(product.stock) : '',
+      activo: Boolean(product.activo),
+      destacado: Boolean(product.destacado),
+      descuento: product.descuento === null || product.descuento === undefined
+        ? ''
+        : String(product.descuento),
+      tags: (product.tags || []).join(', ')
+    });
+    setIsModalOpen(true);
+  };
+
+  const openDuplicateModal = (product: Product) => {
+    const matchedCategoryId = categories.find((category) => category.nombre === product.category)?.id || '';
+    setMode('create');
+    setEditingProduct(null);
+    setFormState({
+      refid: getNextRefId(),
       categoryId: product.categoryId || matchedCategoryId,
       descripción: product.title || '',
       detalle: product.detail || '',
@@ -105,6 +143,42 @@ const Products = () => {
 
   const closeErrorModal = () => {
     setIsErrorModalOpen(false);
+  };
+
+  const handleToggleActivo = async (product: Product) => {
+    const id = product._id || product.id;
+    if (!id) return;
+    const previousValue = product.activo;
+    const nextValue = !previousValue;
+    setLocalProducts((prev) =>
+      prev.map((entry) => (entry.id === product.id ? { ...entry, activo: nextValue } : entry))
+    );
+    setTogglingId(id);
+    const updated = await updateProduct(id, { activo: nextValue });
+    setTogglingId(null);
+    if (!updated) {
+      setLocalProducts((prev) =>
+        prev.map((entry) => (entry.id === product.id ? { ...entry, activo: previousValue } : entry))
+      );
+    }
+  };
+
+  const handleToggleDestacado = async (product: Product) => {
+    const id = product._id || product.id;
+    if (!id) return;
+    const previousValue = product.destacado;
+    const nextValue = !previousValue;
+    setLocalProducts((prev) =>
+      prev.map((entry) => (entry.id === product.id ? { ...entry, destacado: nextValue } : entry))
+    );
+    setTogglingId(id);
+    const updated = await updateProduct(id, { destacado: nextValue });
+    setTogglingId(null);
+    if (!updated) {
+      setLocalProducts((prev) =>
+        prev.map((entry) => (entry.id === product.id ? { ...entry, destacado: previousValue } : entry))
+      );
+    }
   };
 
   useEffect(() => {
@@ -235,7 +309,7 @@ const Products = () => {
         />
       )}
 
-      {!isLoading && !error && products.length > 0 && (
+      {!isLoading && !error && localProducts.length > 0 && (
         <div className="overflow-x-auto rounded-2xl border border-gray-200 shadow-sm">
           <table className="w-full border-collapse text-sm border border-gray-200">
             <thead className="bg-gray-100 text-slate-600 border-b border-gray-200">
@@ -250,11 +324,12 @@ const Products = () => {
                 <th className="px-4 py-3 font-semibold border-r border-gray-200">Destacado</th>
                 <th className="px-4 py-3 font-semibold border-r border-gray-200">Descuento</th>
                 <th className="px-4 py-3 font-semibold border-r border-gray-200">Editar</th>
+                <th className="px-4 py-3 font-semibold border-r border-gray-200">Duplicar</th>
                 <th className="px-4 py-3 font-semibold">Eliminar</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {[...products]
+              {[...localProducts]
                 .sort((a, b) => {
                   const aValue = Number(a.refid ?? a.id);
                   const bValue = Number(b.refid ?? b.id);
@@ -288,27 +363,55 @@ const Products = () => {
                   <td className="px-4 py-3 text-slate-700 border-r border-gray-200">
                     {Number.isFinite(product.price) ? `$${product.price}` : '-'}
                   </td>
-                  <td className="px-4 py-3 border-r border-gray-200">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
-                        product.activo
-                          ? 'bg-emerald-100 text-emerald-700'
-                          : 'bg-gray-200 text-gray-600'
-                      }`}
-                    >
-                      {product.activo ? 'Sí' : 'No'}
-                    </span>
+                  <td className="px-4 py-3 border-r border-gray-200 text-center align-middle">
+                    <div className="flex h-full min-h-[32px] items-center justify-center gap-2">
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
+                        product.activo ? 'bg-blue-100 text-blue-700' : 'bg-gray-200 text-gray-600'
+                      }`}>
+                        {product.activo ? 'Sí' : 'No'}
+                      </span>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={product.activo}
+                        onClick={() => handleToggleActivo(product)}
+                        disabled={togglingId === (product._id || product.id)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          product.activo ? 'bg-primary' : 'bg-gray-300'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
+                            product.activo ? 'translate-x-5' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
                   </td>
-                  <td className="px-4 py-3 border-r border-gray-200">
-                    <span
-                      className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${
-                        product.destacado
-                          ? 'bg-amber-100 text-amber-700'
-                          : 'bg-gray-200 text-gray-600'
-                      }`}
-                    >
-                      {product.destacado ? 'Sí' : 'No'}
-                    </span>
+                  <td className="px-4 py-3 border-r border-gray-200 text-center align-middle">
+                    <div className="flex h-full min-h-[32px] items-center justify-center gap-2">
+                      <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold ${
+                        product.destacado ? 'bg-amber-100 text-amber-700' : 'bg-gray-200 text-gray-600'
+                      }`}>
+                        {product.destacado ? 'Sí' : 'No'}
+                      </span>
+                      <button
+                        type="button"
+                        role="switch"
+                        aria-checked={product.destacado}
+                        onClick={() => handleToggleDestacado(product)}
+                        disabled={togglingId === (product._id || product.id)}
+                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
+                          product.destacado ? 'bg-amber-500' : 'bg-gray-300'
+                        }`}
+                      >
+                        <span
+                          className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
+                            product.destacado ? 'translate-x-5' : 'translate-x-1'
+                          }`}
+                        />
+                      </button>
+                    </div>
                   </td>
                   <td className="px-4 py-3 text-slate-700 border-r border-gray-200">
                     {product.descuento ?? '-'}
@@ -321,6 +424,16 @@ const Products = () => {
                       aria-label="Editar producto"
                     >
                       <span className="material-symbols-outlined text-base">edit</span>
+                    </button>
+                  </td>
+                  <td className="px-4 py-3 border-r border-gray-200">
+                    <button
+                      type="button"
+                      onClick={() => openDuplicateModal(product)}
+                      className="inline-flex items-center justify-center rounded-lg border border-gray-200 p-2 text-slate-600 hover:bg-blue-50 hover:text-blue-600 transition-colors"
+                      aria-label="Duplicar producto"
+                    >
+                      <span className="material-symbols-outlined text-base">content_copy</span>
                     </button>
                   </td>
                   <td className="px-4 py-3">
