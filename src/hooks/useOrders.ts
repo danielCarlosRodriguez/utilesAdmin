@@ -100,7 +100,12 @@ export function useOrders(options?: {
       if (source) params.append('source', source);
 
       const url = `${BACKEND_URL}/api/${DATABASE}/${COLLECTION}?${params.toString()}`;
-      const response = await fetch(url);
+      const response = await fetch(url, {
+        cache: 'no-store',
+        headers: {
+          'Cache-Control': 'no-cache'
+        }
+      });
 
       if (!response.ok) {
         throw new Error(`Error ${response.status}: ${response.statusText}`);

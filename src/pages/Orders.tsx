@@ -1,7 +1,8 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import EmptyState from '../components/EmptyState.tsx';
 import { useOrders } from '../hooks/useOrders.ts';
 import { useUpdateOrder, type Order, type OrderStatus } from '../hooks/useOrdersMutations.ts';
+import { useOrderSocket } from '../hooks/useOrderSocket.ts';
 import OrderDetailModal from '../components/OrderDetailModal.tsx';
 import ShippingLabelModal from '../components/ShippingLabelModal.tsx';
 
@@ -9,6 +10,19 @@ const Orders = () => {
   const { orders, isLoading, error, refetch } = useOrders();
   const [localOrders, setLocalOrders] = useState<Order[]>([]);
   const { updateOrder, isLoading: isUpdating, error: updateError } = useUpdateOrder();
+
+  // Handle real-time order updates via Socket.io
+  const handleOrderUpdated = useCallback((event: { orderId: string; status: OrderStatus; order: Order }) => {
+    setLocalOrders((prev: Order[]) =>
+      prev.map((entry: Order) =>
+        (entry._id === event.orderId || entry.id === event.orderId)
+          ? { ...entry, status: event.status }
+          : entry
+      )
+    );
+  }, []);
+
+  useOrderSocket({ onOrderUpdated: handleOrderUpdated });
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
   const [errorTitle, setErrorTitle] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
