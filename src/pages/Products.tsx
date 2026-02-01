@@ -254,7 +254,16 @@ const Products = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {products.map((product) => (
+              {[...products]
+                .sort((a, b) => {
+                  const aValue = Number(a.refid ?? a.id);
+                  const bValue = Number(b.refid ?? b.id);
+                  if (Number.isFinite(aValue) && Number.isFinite(bValue)) {
+                    return aValue - bValue;
+                  }
+                  return String(a.refid ?? a.id).localeCompare(String(b.refid ?? b.id));
+                })
+                .map((product) => (
                 <tr key={product.id} className="hover:bg-gray-50/70">
                   <td className="px-4 py-3 border-r border-gray-200">
                     {product.image ? (
