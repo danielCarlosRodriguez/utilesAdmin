@@ -3,6 +3,7 @@ import EmptyState from '../components/EmptyState.tsx';
 import { useOrders } from '../hooks/useOrders.ts';
 import { useUpdateOrder, type Order, type OrderStatus } from '../hooks/useOrdersMutations.ts';
 import OrderDetailModal from '../components/OrderDetailModal.tsx';
+import ShippingLabelModal from '../components/ShippingLabelModal.tsx';
 
 const Orders = () => {
   const { orders, isLoading, error, refetch } = useOrders();
@@ -14,6 +15,9 @@ const Orders = () => {
   const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
+  const [packageCounts, setPackageCounts] = useState<Record<string, number>>({});
+  const [printOrder, setPrintOrder] = useState<Order | null>(null);
+  const [isPrintModalOpen, setIsPrintModalOpen] = useState(false);
 
   const closeErrorModal = () => {
     setIsErrorModalOpen(false);
@@ -27,6 +31,24 @@ const Orders = () => {
   const closeDetail = () => {
     setIsDetailOpen(false);
     setSelectedOrder(null);
+  };
+
+  const handlePackageCountChange = (orderId: string, value: string) => {
+    const num = parseInt(value, 10);
+    setPackageCounts((prev) => ({
+      ...prev,
+      [orderId]: Number.isNaN(num) || num < 1 ? 1 : num
+    }));
+  };
+
+  const openPrintModal = (order: Order) => {
+    setPrintOrder(order);
+    setIsPrintModalOpen(true);
+  };
+
+  const closePrintModal = () => {
+    setIsPrintModalOpen(false);
+    setPrintOrder(null);
   };
 
   useEffect(() => {
@@ -136,7 +158,8 @@ const Orders = () => {
                 <th className="px-4 py-3 font-semibold border-r border-gray-200">Cantidad productos</th>
                 <th className="px-4 py-3 font-semibold border-r border-gray-200">Total (compra)</th>
                 <th className="px-4 py-3 font-semibold border-r border-gray-200">Estado</th>
-                <th className="px-4 py-3 font-semibold">Detalle</th>
+                <th className="px-4 py-3 font-semibold border-r border-gray-200">Detalle</th>
+                <th className="px-4 py-3 font-semibold">Imprimir</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -184,7 +207,7 @@ const Orders = () => {
                       </button>
                     </div>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 border-r border-gray-200">
                     <button
                       type="button"
                       onClick={() => openDetail(order)}
@@ -193,6 +216,26 @@ const Orders = () => {
                     >
                       <span className="material-symbols-outlined text-base">visibility</span>
                     </button>
+                  </td>
+                  <td className="px-4 py-3">
+                    <div className="flex items-center gap-2">
+                      <input
+                        type="number"
+                        min="1"
+                        value={packageCounts[order.id] || 1}
+                        onChange={(e) => handlePackageCountChange(order.id, e.target.value)}
+                        className="w-14 rounded-lg border border-gray-200 px-2 py-1.5 text-center text-sm [appearance:textfield] [&::-webkit-outer-spin-button]:appearance-none [&::-webkit-inner-spin-button]:appearance-none"
+                        aria-label="Cantidad de paquetes"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => openPrintModal(order)}
+                        className="inline-flex items-center justify-center rounded-lg border border-gray-200 p-2 text-slate-600 hover:bg-gray-50 hover:text-primary transition-colors"
+                        aria-label="Imprimir orden"
+                      >
+                        <span className="material-symbols-outlined text-base">print</span>
+                      </button>
+                    </div>
                   </td>
                 </tr>
               ))}
@@ -207,6 +250,13 @@ const Orders = () => {
         onClose={closeDetail}
         statusLabel={statusLabel}
         statusBadgeClass={statusBadgeClass}
+      />
+
+      <ShippingLabelModal
+        isOpen={isPrintModalOpen}
+        order={printOrder}
+        packageCount={printOrder ? (packageCounts[printOrder.id] || 1) : 1}
+        onClose={closePrintModal}
       />
 
 
