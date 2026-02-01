@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import type { Order, OrderStatus } from './useOrdersMutations.ts';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://confident-selena-proyecto-x-ad9040cc.koyeb.app';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 const DATABASE = 'utiles';
 const COLLECTION = 'orders';
 

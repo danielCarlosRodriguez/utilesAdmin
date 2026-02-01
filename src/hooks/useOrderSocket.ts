@@ -2,7 +2,7 @@ import { useEffect, useRef, useCallback } from 'react';
 import { io, Socket } from 'socket.io-client';
 import type { Order, OrderStatus } from './useOrdersMutations';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://utilesya-f43ef34adf2b.herokuapp.com';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 
 interface OrderUpdatedEvent {
   orderId: string;
@@ -17,10 +17,21 @@ interface UseOrderSocketOptions {
 export function useOrderSocket(options: UseOrderSocketOptions = {}) {
   const { onOrderUpdated } = options;
   const socketRef = useRef<Socket | null>(null);
-  const isConnectedRef = useRef(false);
+  const onOrderUpdatedRef = useRef(onOrderUpdated);
 
-  const connect = useCallback(() => {
-    if (socketRef.current?.connected) return;
+  // Keep ref updated
+  useEffect(() => {
+    onOrderUpdatedRef.current = onOrderUpdated;
+  }, [onOrderUpdated]);
+
+  // Connect and setup all listeners
+  useEffect(() => {
+    if (!BACKEND_URL) {
+      console.error('Socket: BACKEND_URL not defined');
+      return;
+    }
+
+    console.log('Socket: Connecting to', BACKEND_URL);
 
     const socket = io(BACKEND_URL, {
       transports: ['websocket', 'polling'],
@@ -31,61 +42,35 @@ export function useOrderSocket(options: UseOrderSocketOptions = {}) {
 
     socket.on('connect', () => {
       console.log('Socket connected:', socket.id);
-      isConnectedRef.current = true;
-      // Join admin room
       socket.emit('join:admin');
     });
 
     socket.on('disconnect', (reason) => {
       console.log('Socket disconnected:', reason);
-      isConnectedRef.current = false;
     });
 
     socket.on('connect_error', (error) => {
       console.error('Socket connection error:', error.message);
     });
 
-    socketRef.current = socket;
-  }, []);
-
-  const disconnect = useCallback(() => {
-    if (socketRef.current) {
-      socketRef.current.disconnect();
-      socketRef.current = null;
-      isConnectedRef.current = false;
-    }
-  }, []);
-
-  // Handle order:updated event
-  useEffect(() => {
-    const socket = socketRef.current;
-    if (!socket || !onOrderUpdated) return;
-
-    const handler = (event: OrderUpdatedEvent) => {
+    socket.on('order:updated', (event: OrderUpdatedEvent) => {
       console.log('Order updated event received:', event);
-      onOrderUpdated(event);
-    };
+      if (onOrderUpdatedRef.current) {
+        onOrderUpdatedRef.current(event);
+      }
+    });
 
-    socket.on('order:updated', handler);
-
-    return () => {
-      socket.off('order:updated', handler);
-    };
-  }, [onOrderUpdated]);
-
-  // Auto-connect on mount, disconnect on unmount
-  useEffect(() => {
-    connect();
+    socketRef.current = socket;
 
     return () => {
-      disconnect();
+      console.log('Socket: Disconnecting');
+      socket.disconnect();
+      socketRef.current = null;
     };
-  }, [connect, disconnect]);
+  }, []);
 
   return {
-    isConnected: isConnectedRef.current,
-    connect,
-    disconnect,
+    socket: socketRef.current,
   };
 }
 

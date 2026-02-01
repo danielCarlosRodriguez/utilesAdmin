@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from 'react';
 
-const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'https://confident-selena-proyecto-x-ad9040cc.koyeb.app';
+const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 const DATABASE = 'utiles';
 const COLLECTIONS = ['categories'];
 
