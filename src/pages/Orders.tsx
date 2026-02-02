@@ -96,23 +96,39 @@ const Orders = () => {
 
   const statusLabel = (status?: OrderStatus) => {
     switch (status) {
+      case 'pending':
+        return 'Pedido Recibido';
+      case 'ready':
+        return 'Preparado';
+      case 'shipped':
+        return 'En Camino';
+      case 'delivered':
+        return 'Entregado';
       case 'cancelled':
         return 'Cancelado';
-      case 'confirmed':
-      case 'shipped':
-        return 'Entregado';
       default:
-        return 'Pendiente';
+        return 'Pedido Recibido';
     }
   };
 
   const statusBadgeClass = (status?: OrderStatus) => {
-    if (status === 'cancelled') return 'bg-red-100 text-red-700';
-    if (status === 'confirmed' || status === 'shipped') return 'bg-emerald-100 text-emerald-700';
-    return 'bg-blue-100 text-blue-700';
+    switch (status) {
+      case 'pending':
+        return 'bg-blue-100 text-blue-700';
+      case 'ready':
+        return 'bg-amber-100 text-amber-600';
+      case 'shipped':
+        return 'bg-purple-100 text-purple-700';
+      case 'delivered':
+        return 'bg-emerald-100 text-emerald-700';
+      case 'cancelled':
+        return 'bg-red-100 text-red-700';
+      default:
+        return 'bg-blue-100 text-blue-700';
+    }
   };
 
-  const isDelivered = (status?: OrderStatus) => status === 'confirmed' || status === 'shipped';
+  const isDelivered = (status?: OrderStatus) => status === 'delivered';
 
   const handleToggleStatus = async (order: Order) => {
     if (order.status === 'cancelled') return;
