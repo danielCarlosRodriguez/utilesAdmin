@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, type FormEvent } from 'react';
 import EmptyState from '../components/EmptyState.tsx';
 import { useProducts, type Product } from '../hooks/useProducts.ts';
 import { useCategories } from '../hooks/useCategories.ts';
@@ -28,7 +28,7 @@ const emptyForm: ProductFormState = {
   marca: '',
   precio: '',
   stock: '',
-  activo: true,
+  activo: false,
   destacado: false,
   descuento: '',
   tags: ''
@@ -55,9 +55,6 @@ const Products = () => {
   const [formState, setFormState] = useState<ProductFormState>(emptyForm);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState<Product | null>(null);
-  const [isSuccessModalOpen, setIsSuccessModalOpen] = useState(false);
-  const [successTitle, setSuccessTitle] = useState('');
-  const [successMessage, setSuccessMessage] = useState('');
   const [isErrorModalOpen, setIsErrorModalOpen] = useState(false);
   const [errorTitle, setErrorTitle] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -80,10 +77,20 @@ const Products = () => {
     return String(maxRefId + 1);
   };
 
+  const buildDefaultImages = (refid: string) => {
+    const value = String(refid).padStart(3, '0');
+    return `${value}-01.png, ${value}-02.png`;
+  };
+
   const openCreateModal = () => {
     setMode('create');
     setEditingProduct(null);
-    setFormState({ ...emptyForm, refid: getNextRefId() });
+    const nextRefId = getNextRefId();
+    setFormState({
+      ...emptyForm,
+      refid: nextRefId,
+      imagen: buildDefaultImages(nextRefId)
+    });
     setIsModalOpen(true);
   };
 
@@ -112,14 +119,15 @@ const Products = () => {
 
   const openDuplicateModal = (product: Product) => {
     const matchedCategoryId = categories.find((category) => category.nombre === product.category)?.id || '';
+    const nextRefId = getNextRefId();
     setMode('create');
     setEditingProduct(null);
     setFormState({
-      refid: getNextRefId(),
+      refid: nextRefId,
       categoryId: product.categoryId || matchedCategoryId,
       descripción: product.title || '',
       detalle: product.detail || '',
-      imagen: (product.images || []).join(', '),
+      imagen: buildDefaultImages(nextRefId),
       marca: product.brand || '',
       precio: Number.isFinite(product.price) ? String(product.price) : '',
       stock: Number.isFinite(product.stock) ? String(product.stock) : '',
@@ -137,9 +145,6 @@ const Products = () => {
     setIsModalOpen(false);
   };
 
-  const closeSuccessModal = () => {
-    setIsSuccessModalOpen(false);
-  };
 
   const closeErrorModal = () => {
     setIsErrorModalOpen(false);
@@ -196,10 +201,16 @@ const Products = () => {
   }, [deleteError]);
 
   const handleChange = (field: keyof ProductFormState, value: string | boolean) => {
-    setFormState(prev => ({ ...prev, [field]: value }));
+    setFormState((prev) => {
+      if (field === 'refid') {
+        const refValue = String(value);
+        return { ...prev, refid: refValue, imagen: buildDefaultImages(refValue) };
+      }
+      return { ...prev, [field]: value };
+    });
   };
 
-  const handleSubmit = async (event: React.FormEvent) => {
+  const handleSubmit = async (event: FormEvent) => {
     event.preventDefault();
 
     const payload = {
@@ -229,9 +240,6 @@ const Products = () => {
       if (created) {
         await refetch();
         closeModal();
-        setSuccessTitle('Producto creado');
-        setSuccessMessage('El producto se creó correctamente.');
-        setIsSuccessModalOpen(true);
       }
       return;
     }
@@ -242,9 +250,6 @@ const Products = () => {
     if (updated) {
       await refetch();
       closeModal();
-      setSuccessTitle('Producto actualizado');
-      setSuccessMessage('El producto se actualizó correctamente.');
-      setIsSuccessModalOpen(true);
     }
   };
 
@@ -703,35 +708,6 @@ const Products = () => {
         </div>
       )}
 
-      {isSuccessModalOpen && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-md rounded-2xl bg-white shadow-xl">
-            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
-              <h3 className="text-lg font-semibold text-slate-800">{successTitle}</h3>
-              <button
-                type="button"
-                onClick={closeSuccessModal}
-                className="rounded-lg p-2 text-slate-500 hover:bg-gray-100"
-                aria-label="Cerrar"
-              >
-                <span className="material-symbols-outlined text-base">close</span>
-              </button>
-            </div>
-            <div className="px-6 py-5 text-sm text-slate-600">
-              {successMessage}
-            </div>
-            <div className="flex items-center justify-end border-t border-gray-200 px-6 py-4">
-              <button
-                type="button"
-                onClick={closeSuccessModal}
-                className="rounded-lg bg-emerald-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-emerald-500"
-              >
-                Entendido
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
 
       {isErrorModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
