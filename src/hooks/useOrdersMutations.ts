@@ -4,7 +4,7 @@ const BACKEND_URL = import.meta.env.VITE_BACKEND_URL;
 const DATABASE = 'utiles';
 const COLLECTION = 'orders';
 
-export type OrderStatus = 'pending' | 'confirmed' | 'shipped' | 'cancelled';
+export type OrderStatus = 'pending' | 'ready' | 'shipped' | 'delivered' | 'cancelled';
 
 export interface OrderItemPayload {
   refid: string;

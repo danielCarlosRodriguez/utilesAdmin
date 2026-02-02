@@ -1,7 +1,10 @@
 import { useRef, useState } from 'react';
 import jsPDF from 'jspdf';
 import html2canvas from 'html2canvas';
+import { QRCodeSVG } from 'qrcode.react';
 import type { Order } from '../hooks/useOrdersMutations.ts';
+
+const DEEP_LINK_BASE_URL = import.meta.env.VITE_DEEP_LINK_URL || 'https://utilesdeeplink.netlify.app';
 
 type ShippingLabelModalProps = {
   isOpen: boolean;
@@ -31,6 +34,14 @@ const ShippingLabelModal = ({ isOpen, order, packageCount, onClose }: ShippingLa
   const orderId = order.orderId !== undefined ? String(order.orderId) : (order.orderNumber || order.id);
   const totalPackages = packageCount || 1;
   const labels = Array.from({ length: totalPackages }, (_, i) => i + 1);
+
+  // Generate QR data as Base64 encoded JSON
+  const qrData = {
+    id: order._id || order.id,
+    orderNumber: order.orderNumber || orderId,
+    status: order.status
+  };
+  const qrUrl = `${DEEP_LINK_BASE_URL}/order/${btoa(JSON.stringify(qrData))}`;
 
   const handleGeneratePDF = async () => {
     const content = pdfContentRef.current;
@@ -178,10 +189,10 @@ const ShippingLabelModal = ({ isOpen, order, packageCount, onClose }: ShippingLa
                       </div>
                     </div>
                     <div className="flex-1 flex items-center justify-center p-2">
-                      <img
-                        alt="QR Code"
-                        className="w-24 h-24 object-contain"
-                        src="/imagenes/qr.png"
+                      <QRCodeSVG
+                        value={qrUrl}
+                        size={96}
+                        level="M"
                       />
                     </div>
                   </div>
@@ -286,10 +297,10 @@ const ShippingLabelModal = ({ isOpen, order, packageCount, onClose }: ShippingLa
                     className="flex items-center justify-center"
                     style={{ flex: 1, padding: "12px" }}
                   >
-                    <img
-                      alt="QR Code"
-                      style={{ width: "120px", height: "120px" }}
-                      src="/imagenes/qr.png"
+                    <QRCodeSVG
+                      value={qrUrl}
+                      size={120}
+                      level="M"
                     />
                   </div>
                 </div>
