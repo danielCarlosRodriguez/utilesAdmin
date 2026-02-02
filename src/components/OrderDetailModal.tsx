@@ -1,3 +1,6 @@
+import { useRef, useState } from 'react';
+import jsPDF from 'jspdf';
+import html2canvas from 'html2canvas';
 import type { Order, OrderStatus } from '../hooks/useOrdersMutations.ts';
 
 type OrderDetailModalProps = {
@@ -17,8 +20,60 @@ const OrderDetailModal = ({
 }: OrderDetailModalProps) => {
   if (!isOpen || !order) return null;
 
+  const statusTextClass = (status?: OrderStatus) => {
+    if (status === 'cancelled') return 'text-red-700';
+    if (status === 'confirmed' || status === 'shipped') return 'text-emerald-700';
+    return 'text-blue-700';
+  };
+
   const itemsCount = order.totals?.itemsCount ?? order.items.length;
   const total = order.totals?.total ?? order.items.reduce((sum, item) => sum + item.subtotal, 0);
+  const pdfContentRef = useRef<HTMLDivElement>(null);
+  const [isGenerating, setIsGenerating] = useState(false);
+
+  const handlePrintOrder = async () => {
+    const content = pdfContentRef.current;
+    if (!content || isGenerating) return;
+
+    setIsGenerating(true);
+
+    try {
+      const canvas = await html2canvas(content, {
+        scale: 2,
+        useCORS: true,
+        allowTaint: true,
+        backgroundColor: '#ffffff'
+      });
+
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF({
+        orientation: 'portrait',
+        unit: 'mm',
+        format: 'a4'
+      });
+
+      const pageWidth = pdf.internal.pageSize.getWidth();
+      const pageHeight = pdf.internal.pageSize.getHeight();
+      const imgProps = pdf.getImageProperties(imgData);
+      const widthRatio = pageWidth / imgProps.width;
+      const heightRatio = pageHeight / imgProps.height;
+      const scale = Math.min(widthRatio, heightRatio);
+      const imgWidth = imgProps.width * scale;
+      const imgHeight = imgProps.height * scale;
+      const x = (pageWidth - imgWidth) / 2;
+      const y = 0;
+
+      pdf.addImage(imgData, 'PNG', x, y, imgWidth, imgHeight);
+
+      const pdfBlob = pdf.output('blob');
+      const pdfUrl = URL.createObjectURL(pdfBlob);
+      window.open(pdfUrl, '_blank');
+    } catch (error) {
+      console.error('Error generating order PDF:', error);
+    } finally {
+      setIsGenerating(false);
+    }
+  };
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
@@ -30,18 +85,34 @@ const OrderDetailModal = ({
               {order.orderId !== undefined ? `OrderId ${order.orderId}` : order.orderNumber || order.id}
             </p>
           </div>
-          <button
-            type="button"
-            onClick={onClose}
-            className="rounded-lg p-2 text-slate-500 hover:bg-gray-100"
-            aria-label="Cerrar"
-          >
-            <span className="material-symbols-outlined text-base">close</span>
-          </button>
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={handlePrintOrder}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-gray-200 px-3 py-1.5 text-xs font-semibold text-slate-600 hover:bg-gray-50 disabled:opacity-60"
+              disabled={isGenerating}
+            >
+              <span className="material-symbols-outlined text-sm">print</span>
+              {isGenerating ? 'Generando...' : 'Imprimir'}
+            </button>
+            <button
+              type="button"
+              onClick={onClose}
+              className="rounded-lg p-2 text-slate-500 hover:bg-gray-100"
+              aria-label="Cerrar"
+            >
+              <span className="material-symbols-outlined text-base">close</span>
+            </button>
+          </div>
         </div>
 
-        <div className="px-6 py-5">
-          <table className="w-full text-sm text-slate-700">
+        <div ref={pdfContentRef} className="px-6 pt-2 pb-4">
+          <div className="text-xs uppercase tracking-wide text-slate-400">OrderId</div>
+          <div className="mt-1 text-sm font-semibold text-slate-800">
+            {order.orderId !== undefined ? `#${order.orderId}` : (order.orderNumber || order.id)}
+          </div>
+
+          <table className="mt-3 w-full text-sm text-slate-700">
             <tbody>
               <tr className="align-top">
                 <td className="pr-6">
@@ -52,17 +123,18 @@ const OrderDetailModal = ({
                 </td>
                 <td className="pr-6 text-center">
                   <div className="text-xs uppercase tracking-wide text-slate-400">Estado</div>
-                  <div className="mt-1">
-                    <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${statusBadgeClass(order.status)}`}>
-                      {statusLabel(order.status)}
-                    </span>
+                  <div className={`mt-1 text-xs font-semibold ${statusTextClass(order.status)}`}>
+                    {statusLabel(order.status)}
                   </div>
                 </td>
                 <td className="pr-6 text-center">
-                  <div className="text-xs uppercase tracking-wide text-slate-400">Cantidad de productos</div>
+                  <div className="text-xs uppercase tracking-wide text-slate-400">Total de items</div>
+                  <div className="mt-1 font-semibold text-slate-800">{order.items.length}</div>
+                </td>
+                <td className="text-center">
+                  <div className="text-xs uppercase tracking-wide text-slate-400">Total Productos</div>
                   <div className="mt-1 font-semibold text-slate-800">{itemsCount}</div>
                 </td>
-                <td />
               </tr>
             </tbody>
           </table>
@@ -99,7 +171,16 @@ const OrderDetailModal = ({
           </div>
         </div>
 
-        <div className="flex items-center justify-end border-t border-gray-200 px-6 py-4">
+        <div className="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4">
+          <button
+            type="button"
+            onClick={handlePrintOrder}
+            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 px-4 py-2 text-sm text-slate-600 hover:bg-gray-50 disabled:opacity-60"
+            disabled={isGenerating}
+          >
+            <span className="material-symbols-outlined text-base">print</span>
+            {isGenerating ? 'Generando...' : 'Imprimir'}
+          </button>
           <button
             type="button"
             onClick={onClose}

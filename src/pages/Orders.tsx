@@ -1,7 +1,7 @@
 import { useEffect, useState, useCallback } from 'react';
 import EmptyState from '../components/EmptyState.tsx';
 import { useOrders } from '../hooks/useOrders.ts';
-import { useUpdateOrder, type Order, type OrderStatus } from '../hooks/useOrdersMutations.ts';
+import { useDeleteOrder, useUpdateOrder, type Order, type OrderStatus } from '../hooks/useOrdersMutations.ts';
 import { useOrderSocket } from '../hooks/useOrderSocket.ts';
 import OrderDetailModal from '../components/OrderDetailModal.tsx';
 import ShippingLabelModal from '../components/ShippingLabelModal.tsx';
@@ -10,6 +10,7 @@ const Orders = () => {
   const { orders, isLoading, error, refetch } = useOrders();
   const [localOrders, setLocalOrders] = useState<Order[]>([]);
   const { updateOrder, isLoading: isUpdating, error: updateError } = useUpdateOrder();
+  const { deleteOrder, isLoading: isDeleting, error: deleteError } = useDeleteOrder();
 
   // Handle real-time order updates via Socket.io
   const handleOrderUpdated = useCallback((event: { orderId: string; status: OrderStatus; order: Order }) => {
@@ -27,6 +28,9 @@ const Orders = () => {
   const [errorTitle, setErrorTitle] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [pendingDelete, setPendingDelete] = useState<Order | null>(null);
+  const [deletingId, setDeletingId] = useState<string | null>(null);
   const [selectedOrder, setSelectedOrder] = useState<Order | null>(null);
   const [isDetailOpen, setIsDetailOpen] = useState(false);
   const [packageCounts, setPackageCounts] = useState<Record<string, number>>({});
@@ -71,6 +75,13 @@ const Orders = () => {
     setErrorMessage(updateError);
     setIsErrorModalOpen(true);
   }, [updateError]);
+
+  useEffect(() => {
+    if (!deleteError) return;
+    setErrorTitle('Error al eliminar orden');
+    setErrorMessage(deleteError);
+    setIsErrorModalOpen(true);
+  }, [deleteError]);
 
   useEffect(() => {
     setLocalOrders(orders);
@@ -120,6 +131,29 @@ const Orders = () => {
         prev.map((entry) => (entry.id === order.id ? { ...entry, status: previousStatus } : entry))
       );
       return;
+    }
+  };
+
+  const handleDelete = (order: Order) => {
+    setPendingDelete(order);
+    setIsDeleteModalOpen(true);
+  };
+
+  const closeDeleteModal = () => {
+    setIsDeleteModalOpen(false);
+    setPendingDelete(null);
+  };
+
+  const confirmDelete = async () => {
+    if (!pendingDelete) return;
+    const id = pendingDelete._id || pendingDelete.id;
+    if (!id) return;
+    setDeletingId(id);
+    const ok = await deleteOrder(id);
+    setDeletingId(null);
+    if (ok) {
+      await refetch();
+      closeDeleteModal();
     }
   };
 
@@ -173,7 +207,8 @@ const Orders = () => {
                 <th className="px-4 py-3 font-semibold border-r border-gray-200">Total (compra)</th>
                 <th className="px-4 py-3 font-semibold border-r border-gray-200">Estado</th>
                 <th className="px-4 py-3 font-semibold border-r border-gray-200">Detalle</th>
-                <th className="px-4 py-3 font-semibold">Imprimir</th>
+                <th className="px-4 py-3 font-semibold border-r border-gray-200">Imprimir Etiqueta</th>
+                <th className="px-4 py-3 font-semibold">Eliminar</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
@@ -231,7 +266,7 @@ const Orders = () => {
                       <span className="material-symbols-outlined text-base">visibility</span>
                     </button>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 border-r border-gray-200">
                     <div className="flex items-center gap-2">
                       <input
                         type="number"
@@ -250,6 +285,17 @@ const Orders = () => {
                         <span className="material-symbols-outlined text-base">print</span>
                       </button>
                     </div>
+                  </td>
+                  <td className="px-4 py-3">
+                    <button
+                      type="button"
+                      onClick={() => handleDelete(order)}
+                      disabled={isDeleting && deletingId === (order._id || order.id)}
+                      className="inline-flex items-center justify-center rounded-lg border border-gray-200 p-2 text-slate-600 hover:bg-red-50 hover:text-red-600 transition-colors"
+                      aria-label="Eliminar orden"
+                    >
+                      <span className="material-symbols-outlined text-base">delete</span>
+                    </button>
                   </td>
                 </tr>
               ))}
@@ -272,6 +318,50 @@ const Orders = () => {
         packageCount={printOrder ? (packageCounts[printOrder.id] || 1) : 1}
         onClose={closePrintModal}
       />
+
+      {isDeleteModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
+          <div className="w-full max-w-md rounded-2xl bg-white shadow-xl">
+            <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
+              <h3 className="text-lg font-semibold text-slate-800">Eliminar orden</h3>
+              <button
+                type="button"
+                onClick={closeDeleteModal}
+                className="rounded-lg p-2 text-slate-500 hover:bg-gray-100"
+                aria-label="Cerrar"
+              >
+                <span className="material-symbols-outlined text-base">close</span>
+              </button>
+            </div>
+            <div className="px-6 py-5 text-sm text-slate-600">
+              ¿Seguro que quieres eliminar la orden{' '}
+              <span className="font-semibold text-slate-800">
+                {pendingDelete?.orderId !== undefined
+                  ? `#${pendingDelete.orderId}`
+                  : (pendingDelete?.orderNumber || pendingDelete?.id)}
+              </span>
+              ?
+            </div>
+            <div className="flex items-center justify-end gap-3 border-t border-gray-200 px-6 py-4">
+              <button
+                type="button"
+                onClick={closeDeleteModal}
+                className="rounded-lg border border-gray-200 px-4 py-2 text-sm text-slate-600 hover:bg-gray-50"
+              >
+                Cancelar
+              </button>
+              <button
+                type="button"
+                onClick={confirmDelete}
+                disabled={isDeleting}
+                className="rounded-lg bg-red-600 px-4 py-2 text-sm font-semibold text-white shadow-sm transition hover:bg-red-500 disabled:cursor-not-allowed disabled:opacity-60"
+              >
+                {isDeleting ? 'Eliminando...' : 'Eliminar'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
 
 
 
