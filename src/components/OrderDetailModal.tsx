@@ -119,6 +119,7 @@ const OrderDetailModal = ({
                   <div className="text-xs uppercase tracking-wide text-slate-400">Cliente</div>
                   <div className="mt-1 font-semibold text-slate-800">{order.customerName || '-'}</div>
                   <div className="text-slate-600">{order.customerAddress || '-'}</div>
+                  <div className="text-slate-600">{order.customerPhone || '-'}</div>
                   <div className="text-xs text-slate-500">{order.customerNote || '-'}</div>
                 </td>
                 <td className="pr-6 text-center">

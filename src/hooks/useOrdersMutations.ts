@@ -26,6 +26,7 @@ export interface OrderPayload {
   createdAt?: string;
   status?: OrderStatus;
   customerName?: string;
+  customerPhone?: string;
   customerAddress?: string;
   customerNote?: string;
   items: OrderItemPayload[];
@@ -56,6 +57,7 @@ export interface Order {
   createdAt?: string;
   status?: OrderStatus;
   customerName?: string;
+  customerPhone?: string;
   customerAddress?: string;
   customerNote?: string;
   items: OrderItem[];
@@ -70,6 +72,7 @@ interface RawMongoOrder {
   createdAt?: string;
   status?: OrderStatus;
   customerName?: string;
+  customerPhone?: string;
   customerAddress?: string;
   customerNote?: string;
   items?: Array<{
@@ -124,6 +127,7 @@ function normalizeOrder(item: RawMongoOrder): Order {
     createdAt: item.createdAt,
     status: item.status,
     customerName: item.customerName,
+    customerPhone: item.customerPhone,
     customerAddress: item.customerAddress,
     customerNote: item.customerNote,
     items,

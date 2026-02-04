@@ -1,9 +1,8 @@
 
 import React, { useState } from 'react';
-import { BrowserRouter, Routes, Route, Navigate, useNavigate, useLocation } from 'react-router-dom';
+import { BrowserRouter, Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 import Header from './components/Header.tsx';
 import Footer from './components/Footer.tsx';
-import HomePage from './pages/HomePage.tsx';
 import ProductDetail from './pages/ProductDetail.tsx';
 import CategoryPage from './pages/CategoryPage.tsx';
 import Categories from './pages/Categories.tsx';
@@ -12,26 +11,13 @@ import CartPage from './pages/CartPage.tsx';
 import CheckoutPage from './pages/CheckoutPage.tsx';
 import Products from './pages/Products.tsx';
 import { CartProvider } from './context/CartContext.tsx';
-import { useCart } from './context/CartContext.tsx';
 import { ToastProvider } from './context/ToastContext.tsx';
 import MiniCart from './components/MiniCart.tsx';
 import ToastContainer from './components/ToastContainer.tsx';
 
 const AppContent = () => {
   const navigate = useNavigate();
-  const location = useLocation();
-  const [searchTerm, setSearchTerm] = useState('');
   const [isMiniCartOpen, setIsMiniCartOpen] = useState(false);
-  const { items } = useCart();
-
-  const cartCount = items.reduce((sum, item) => sum + item.quantity, 0);
-
-  const handleSearchChange = (value: string) => {
-    setSearchTerm(value);
-    if (location.pathname !== '/') {
-      navigate('/');
-    }
-  };
 
   return (
     <div className="flex flex-col min-h-screen font-sans selection:bg-primary/20 selection:text-primary">
@@ -41,8 +27,7 @@ const AppContent = () => {
 
       <main className="flex-grow">
         <Routes>
-          <Route path="/" element={<HomePage searchTerm={searchTerm} />} />
-          <Route path="/products" element={<Products />} />
+          <Route path="/" element={<Products />} />
           <Route path="/category" element={<Categories />} />
           <Route path="/orders" element={<Orders />} />
           <Route path="/usuarios" element={<div className="max-w-7xl mx-auto px-4 md:px-8 py-12" />} />

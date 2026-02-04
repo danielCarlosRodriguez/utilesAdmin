@@ -154,7 +154,7 @@ const ShippingLabelModal = ({ isOpen, order, packageCount, onClose }: ShippingLa
                       <p className="text-sm leading-snug">
                         Montevideo | Uruguay
                       </p>
-                      <p className="text-sm leading-snug">Teléfono: </p>
+                      <p className="text-sm leading-snug">Teléfono: {order.customerPhone || '-'}</p>
                     </div>
                     <div className="flex border-b-2 border-black">
                       <div className="w-1/2 px-3 py-2 border-r-2 border-black">
@@ -269,7 +269,7 @@ const ShippingLabelModal = ({ isOpen, order, packageCount, onClose }: ShippingLa
                     <p style={{ fontSize: "14px", lineHeight: 1.3 }}>
                       Montevideo | Uruguay
                     </p>
-                    <p style={{ fontSize: "14px", lineHeight: 1.3, marginBottom: "4px" }}>Teléfono: </p>
+                    <p style={{ fontSize: "14px", lineHeight: 1.3, marginBottom: "4px" }}>Teléfono: {order.customerPhone || '-'}</p>
                   </div>
                   <div className="flex" style={{ borderBottom: "2px solid black" }}>
                     <div style={{ width: "50%", padding: "10px 16px", borderRight: "2px solid black" }}>

@@ -1,10 +1,81 @@
-import { useEffect, useState, useCallback } from 'react';
+import { useEffect, useState, useCallback, useRef } from 'react';
 import EmptyState from '../components/EmptyState.tsx';
 import { useOrders } from '../hooks/useOrders.ts';
 import { useDeleteOrder, useUpdateOrder, type Order, type OrderStatus } from '../hooks/useOrdersMutations.ts';
 import { useOrderSocket } from '../hooks/useOrderSocket.ts';
 import OrderDetailModal from '../components/OrderDetailModal.tsx';
 import ShippingLabelModal from '../components/ShippingLabelModal.tsx';
+
+type StatusDropdownProps = {
+  currentStatus: OrderStatus;
+  onChange: (status: OrderStatus) => void;
+  disabled?: boolean;
+};
+
+const statusConfig: Record<OrderStatus, { label: string; bgClass: string; textClass: string }> = {
+  pending: { label: 'Pedido Recibido', bgClass: 'bg-blue-100', textClass: 'text-blue-700' },
+  ready: { label: 'Preparado', bgClass: 'bg-amber-100', textClass: 'text-amber-600' },
+  shipped: { label: 'En Camino', bgClass: 'bg-purple-100', textClass: 'text-purple-700' },
+  delivered: { label: 'Entregado', bgClass: 'bg-emerald-100', textClass: 'text-emerald-700' },
+  cancelled: { label: 'Cancelado', bgClass: 'bg-red-100', textClass: 'text-red-700' },
+};
+
+const allStatusKeys: OrderStatus[] = ['pending', 'ready', 'shipped', 'delivered', 'cancelled'];
+
+const StatusDropdown = ({ currentStatus, onChange, disabled }: StatusDropdownProps) => {
+  const [isOpen, setIsOpen] = useState(false);
+  const dropdownRef = useRef<HTMLDivElement>(null);
+  const current = statusConfig[currentStatus] || statusConfig.pending;
+
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
+        setIsOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
+
+  return (
+    <div ref={dropdownRef} className="relative inline-block">
+      <button
+        type="button"
+        onClick={() => !disabled && setIsOpen(!isOpen)}
+        disabled={disabled}
+        className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1.5 text-xs font-semibold transition-colors ${current.bgClass} ${current.textClass} ${disabled ? 'opacity-50 cursor-not-allowed' : 'cursor-pointer hover:opacity-80'}`}
+      >
+        {current.label}
+        <span className="material-symbols-outlined text-sm">expand_more</span>
+      </button>
+      {isOpen && (
+        <div className="absolute z-50 mt-1 w-44 rounded-xl bg-white shadow-lg border border-gray-200 py-1 left-1/2 -translate-x-1/2">
+          {allStatusKeys.map((status) => {
+            const config = statusConfig[status];
+            const isSelected = status === currentStatus;
+            return (
+              <button
+                key={status}
+                type="button"
+                onClick={() => {
+                  onChange(status);
+                  setIsOpen(false);
+                }}
+                className={`w-full px-3 py-2 text-left text-xs font-semibold flex items-center gap-2 hover:bg-gray-50 ${isSelected ? 'bg-gray-50' : ''}`}
+              >
+                <span className={`inline-block w-3 h-3 rounded-full ${config.bgClass} border ${config.textClass.replace('text-', 'border-')}`} />
+                <span className={config.textClass}>{config.label}</span>
+                {isSelected && (
+                  <span className="material-symbols-outlined text-sm ml-auto text-primary">check</span>
+                )}
+              </button>
+            );
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const Orders = () => {
   const { orders, isLoading, error, refetch } = useOrders();
@@ -128,25 +199,23 @@ const Orders = () => {
     }
   };
 
-  const isDelivered = (status?: OrderStatus) => status === 'delivered';
+  const allStatuses: OrderStatus[] = ['pending', 'ready', 'shipped', 'delivered', 'cancelled'];
 
-  const handleToggleStatus = async (order: Order) => {
-    if (order.status === 'cancelled') return;
-    const nextStatus: OrderStatus = isDelivered(order.status) ? 'pending' : 'confirmed';
+  const handleStatusChange = async (order: Order, newStatus: OrderStatus) => {
+    if (order.status === newStatus) return;
     const id = order._id || order.id;
     if (!id) return;
     const previousStatus = order.status;
     setLocalOrders((prev) =>
-      prev.map((entry) => (entry.id === order.id ? { ...entry, status: nextStatus } : entry))
+      prev.map((entry) => (entry.id === order.id ? { ...entry, status: newStatus } : entry))
     );
     setUpdatingId(id);
-    const updated = await updateOrder(id, { status: nextStatus });
+    const updated = await updateOrder(id, { status: newStatus });
     setUpdatingId(null);
     if (!updated) {
       setLocalOrders((prev) =>
         prev.map((entry) => (entry.id === order.id ? { ...entry, status: previousStatus } : entry))
       );
-      return;
     }
   };
 
@@ -211,26 +280,26 @@ const Orders = () => {
       )}
 
       {!isLoading && !error && localOrders.length > 0 && (
-        <div className="overflow-x-auto rounded-2xl border border-gray-200 shadow-sm">
-          <table className="w-full border-collapse text-sm border border-gray-200">
+        <div className="rounded-2xl border border-gray-200 shadow-sm overflow-visible">
+          <table className="w-full border-collapse text-sm border border-gray-200 overflow-visible">
             <thead className="bg-gray-100 text-slate-600 border-b border-gray-200">
               <tr className="text-left">
-                <th className="px-4 py-3 font-semibold border-r border-gray-200">OrderId</th>
+                <th className="px-4 py-3 font-semibold border-r border-gray-200 text-center">OrderId</th>
                 <th className="px-4 py-3 font-semibold border-r border-gray-200">Fecha</th>
                 <th className="px-4 py-3 font-semibold border-r border-gray-200">Nombre</th>
                 <th className="px-4 py-3 font-semibold border-r border-gray-200">Dirección / Observaciones</th>
-                <th className="px-4 py-3 font-semibold border-r border-gray-200">Cantidad productos</th>
-                <th className="px-4 py-3 font-semibold border-r border-gray-200">Total (compra)</th>
-                <th className="px-4 py-3 font-semibold border-r border-gray-200">Estado</th>
-                <th className="px-4 py-3 font-semibold border-r border-gray-200">Detalle</th>
+                <th className="px-4 py-3 font-semibold border-r border-gray-200 text-center">Cantidad productos</th>
+                <th className="px-4 py-3 font-semibold border-r border-gray-200 text-center">Total (compra)</th>
+                <th className="px-4 py-3 font-semibold border-r border-gray-200 text-center">Estado</th>
+                <th className="px-4 py-3 font-semibold border-r border-gray-200 text-center">Detalle</th>
                 <th className="px-4 py-3 font-semibold border-r border-gray-200">Imprimir Etiqueta</th>
-                <th className="px-4 py-3 font-semibold">Eliminar</th>
+                <th className="px-4 py-3 font-semibold text-center">Eliminar</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-gray-200">
+            <tbody className="divide-y divide-gray-200 overflow-visible">
               {localOrders.map((order) => (
                 <tr key={order.id} className="hover:bg-gray-50/70">
-                  <td className="px-4 py-3 text-slate-700 border-r border-gray-200">
+                  <td className="px-4 py-3 text-slate-700 border-r border-gray-200 text-center">
                     {order.orderId !== undefined ? String(order.orderId) : (order.orderNumber || order.id)}
                   </td>
                   <td className="px-4 py-3 text-xs text-slate-600 border-r border-gray-200">
@@ -243,36 +312,20 @@ const Orders = () => {
                     <div className="text-sm text-slate-700">{order.customerAddress || '-'}</div>
                     <div className="text-xs text-slate-500">{order.customerNote || '-'}</div>
                   </td>
-                  <td className="px-4 py-3 text-slate-700 border-r border-gray-200">
+                  <td className="px-4 py-3 text-slate-700 border-r border-gray-200 text-center">
                     {order.totals?.itemsCount ?? order.items.length}
                   </td>
                   <td className="px-4 py-3 text-slate-700 border-r border-gray-200 text-center">
                     {Number.isFinite(order.totals?.total) ? `$ ${order.totals.total}` : '-'}
                   </td>
-                  <td className="px-4 py-3 border-r border-gray-200 text-center align-middle">
-                    <div className="flex h-full min-h-[32px] items-center justify-center gap-3">
-                      <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold ${statusBadgeClass(order.status)}`}>
-                        {statusLabel(order.status)}
-                      </span>
-                      <button
-                        type="button"
-                        role="switch"
-                        aria-checked={isDelivered(order.status)}
-                        onClick={() => handleToggleStatus(order)}
-                        disabled={isUpdating && updatingId === (order._id || order.id)}
-                        className={`relative inline-flex h-6 w-11 items-center rounded-full transition-colors ${
-                          isDelivered(order.status) ? 'bg-primary' : 'bg-gray-300'
-                        }`}
-                      >
-                        <span
-                          className={`inline-block h-5 w-5 transform rounded-full bg-white transition-transform ${
-                            isDelivered(order.status) ? 'translate-x-5' : 'translate-x-1'
-                          }`}
-                        />
-                      </button>
-                    </div>
+                  <td className="px-4 py-3 border-r border-gray-200 text-center align-middle overflow-visible">
+                    <StatusDropdown
+                      currentStatus={order.status || 'pending'}
+                      onChange={(newStatus) => handleStatusChange(order, newStatus)}
+                      disabled={isUpdating && updatingId === (order._id || order.id)}
+                    />
                   </td>
-                  <td className="px-4 py-3 border-r border-gray-200">
+                  <td className="px-4 py-3 border-r border-gray-200 text-center">
                     <button
                       type="button"
                       onClick={() => openDetail(order)}
@@ -302,7 +355,7 @@ const Orders = () => {
                       </button>
                     </div>
                   </td>
-                  <td className="px-4 py-3">
+                  <td className="px-4 py-3 text-center">
                     <button
                       type="button"
                       onClick={() => handleDelete(order)}
