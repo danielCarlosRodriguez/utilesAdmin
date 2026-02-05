@@ -14,6 +14,7 @@ export interface Product {
   price: number;
   image: string;
   images: string[];
+  imagenCloudinary: string[];
   brand: string;
   detail: string;
   stock: number;
@@ -32,6 +33,7 @@ interface RawMongoProduct {
   descripción: string;
   detalle?: string;
   imagen: string[];
+  imagenCloudinary?: string[];
   marca: string;
   precio: number;
   stock: number;
@@ -69,8 +71,9 @@ function normalizeProduct(item: RawMongoProduct): Product {
     category: item.categoría,
     categoryId: resolvedCategoryId,
     price: item.precio,
-    image: item.imagen?.[0] ? `/imagenes/productos/${item.imagen[0]}` : '',
+    image: item.imagenCloudinary?.[0] || (item.imagen?.[0] ? `/imagenes/productos/${item.imagen[0]}` : ''),
     images: item.imagen || [],
+    imagenCloudinary: item.imagenCloudinary || [],
     brand: item.marca,
     detail: item.detalle || '',
     stock: item.stock,

@@ -1,5 +1,6 @@
-import { useEffect, useState, type FormEvent } from 'react';
+import { useEffect, useState, useCallback, type FormEvent } from 'react';
 import EmptyState from '../components/EmptyState.tsx';
+import ImageUploader from '../components/ImageUploader.tsx';
 import { useProducts, type Product } from '../hooks/useProducts.ts';
 import { useCategories } from '../hooks/useCategories.ts';
 import { useCreateProduct, useDeleteProduct, useUpdateProduct } from '../hooks/useProductMutations.ts';
@@ -10,6 +11,7 @@ type ProductFormState = {
   descripción: string;
   detalle: string;
   imagen: string;
+  imagenCloudinary: string[];
   marca: string;
   precio: string;
   stock: string;
@@ -25,6 +27,7 @@ const emptyForm: ProductFormState = {
   descripción: '',
   detalle: '',
   imagen: '',
+  imagenCloudinary: [],
   marca: '',
   precio: '',
   stock: '',
@@ -89,7 +92,8 @@ const Products = () => {
     setFormState({
       ...emptyForm,
       refid: nextRefId,
-      imagen: buildDefaultImages(nextRefId)
+      imagen: buildDefaultImages(nextRefId),
+      imagenCloudinary: []
     });
     setIsModalOpen(true);
   };
@@ -104,6 +108,7 @@ const Products = () => {
       descripción: product.title || '',
       detalle: product.detail || '',
       imagen: (product.images || []).join(', '),
+      imagenCloudinary: product.imagenCloudinary || [],
       marca: product.brand || '',
       precio: Number.isFinite(product.price) ? String(product.price) : '',
       stock: Number.isFinite(product.stock) ? String(product.stock) : '',
@@ -128,6 +133,7 @@ const Products = () => {
       descripción: product.title || '',
       detalle: product.detail || '',
       imagen: buildDefaultImages(nextRefId),
+      imagenCloudinary: [],
       marca: product.brand || '',
       precio: Number.isFinite(product.price) ? String(product.price) : '',
       stock: Number.isFinite(product.stock) ? String(product.stock) : '',
@@ -222,6 +228,7 @@ const Products = () => {
         .split(',')
         .map(item => item.trim())
         .filter(Boolean),
+      imagenCloudinary: formState.imagenCloudinary,
       marca: formState.marca.trim(),
       precio: Number(formState.precio) || 0,
       stock: Number(formState.stock) || 0,
@@ -467,7 +474,7 @@ const Products = () => {
 
       {isModalOpen && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4">
-          <div className="w-full max-w-3xl rounded-2xl bg-white shadow-xl">
+          <div className="w-full max-w-3xl max-h-[90vh] flex flex-col rounded-2xl bg-white shadow-xl">
             <div className="flex items-center justify-between border-b border-gray-200 px-6 py-4">
               <h3 className="text-lg font-semibold text-slate-800">
                 {mode === 'create' ? 'Crear producto' : 'Editar producto'}
@@ -481,7 +488,8 @@ const Products = () => {
                 <span className="material-symbols-outlined text-base">close</span>
               </button>
             </div>
-            <form onSubmit={handleSubmit} className="px-6 py-5">
+            <form onSubmit={handleSubmit} className="flex flex-col overflow-hidden">
+            <div className="overflow-y-auto px-6 py-5">
               <div className="grid gap-4 md:grid-cols-2">
                 <label className="text-sm text-slate-600">
                   RefId
@@ -592,15 +600,47 @@ const Products = () => {
                     min="0"
                   />
                 </label>
-                <label className="text-sm text-slate-600">
-                  Imágenes (separadas por coma)
-                  <input
-                    type="text"
-                    value={formState.imagen}
-                    onChange={(event) => handleChange('imagen', event.target.value)}
-                    className="mt-1 w-full rounded-lg border border-gray-200 px-3 py-2 text-sm"
+                <div className="text-sm text-slate-600 md:col-span-2">
+                  <p className="mb-2 font-medium">Imágenes (Cloudinary)</p>
+
+                  {/* Lista de imágenes de Cloudinary */}
+                  {formState.imagenCloudinary.length > 0 && (
+                    <div className="mb-3 flex flex-wrap gap-2">
+                      {formState.imagenCloudinary.map((url, idx) => {
+                        const displayName = url.split('/').pop();
+                        return (
+                          <div key={idx} className="group relative">
+                            <div className="flex items-center gap-1.5 rounded-lg border border-gray-200 bg-white px-2 py-1 text-xs">
+                              <img src={url} alt={displayName} className="h-8 w-8 rounded object-cover" />
+                              <span className="max-w-[120px] truncate">{displayName}</span>
+                              <button
+                                type="button"
+                                onClick={() => {
+                                  const updated = [...formState.imagenCloudinary];
+                                  updated.splice(idx, 1);
+                                  setFormState(prev => ({ ...prev, imagenCloudinary: updated }));
+                                }}
+                                className="ml-1 text-gray-400 hover:text-red-500"
+                              >
+                                <span className="material-symbols-outlined text-[14px]">close</span>
+                              </button>
+                            </div>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Uploader */}
+                  <ImageUploader
+                    onUpload={(url) => {
+                      setFormState(prev => ({
+                        ...prev,
+                        imagenCloudinary: [...prev.imagenCloudinary, url]
+                      }));
+                    }}
                   />
-                </label>
+                </div>
                 <label className="text-sm text-slate-600 md:col-span-2">
                   Tags (separadas por coma)
                   <input
@@ -638,14 +678,15 @@ const Products = () => {
                   Destacado
                 </label>
               </div>
+            </div>
 
               {formError && (
-                <div className="mt-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
+                <div className="mx-6 mt-2 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">
                   {formError}
                 </div>
               )}
 
-              <div className="mt-6 flex items-center justify-end gap-3">
+              <div className="flex items-center justify-end gap-3 border-t border-gray-100 px-6 py-4">
                 <button
                   type="button"
                   onClick={closeModal}
