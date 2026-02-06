@@ -50,14 +50,19 @@ const ShippingLabelModal = ({ isOpen, order, packageCount, onClose }: ShippingLa
     setIsGenerating(true);
 
     try {
-      // A5 landscape dimensions in mm
-      const pageWidth = 210;
-      const pageHeight = 148;
+      // A4 portrait: 210 x 297 mm
+      // Each label pair occupies the top half (210 x 148.5mm ≈ A5 landscape)
+      const a4Width = 210;
+      const a4Height = 297;
+      const halfHeight = a4Height / 2; // 148.5mm
+      const margin = 5; // 5mm margin
+      const contentWidth = a4Width - margin * 2;
+      const contentHeight = halfHeight - margin * 2;
 
       const pdf = new jsPDF({
-        orientation: 'landscape',
+        orientation: 'portrait',
         unit: 'mm',
-        format: 'a5'
+        format: 'a4'
       });
 
       const pageElements = content.querySelectorAll('.pdf-page');
@@ -78,7 +83,8 @@ const ShippingLabelModal = ({ isOpen, order, packageCount, onClose }: ShippingLa
           pdf.addPage();
         }
 
-        pdf.addImage(imgData, 'PNG', 0, 0, pageWidth, pageHeight);
+        // Place labels in the top half of A4
+        pdf.addImage(imgData, 'PNG', margin, margin, contentWidth, contentHeight);
       }
 
       // Open PDF in new tab
@@ -229,8 +235,8 @@ const ShippingLabelModal = ({ isOpen, order, packageCount, onClose }: ShippingLa
                   key={pkgNum}
                   className="flex flex-col"
                   style={{
-                    width: "397px",
-                    height: "559px",
+                    width: "380px",
+                    height: "540px",
                     border: "2px solid black",
                     borderRadius: "24px",
                     overflow: "hidden"
@@ -306,7 +312,7 @@ const ShippingLabelModal = ({ isOpen, order, packageCount, onClose }: ShippingLa
                 </div>
               ))}
               {pageLabels.length === 1 && (
-                <div style={{ width: "397px", height: "559px" }} />
+                <div style={{ width: "380px", height: "540px" }} />
               )}
             </div>
           ))}
