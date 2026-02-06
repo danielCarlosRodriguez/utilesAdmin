@@ -10,6 +10,7 @@ import Orders from './pages/Orders.tsx';
 import CartPage from './pages/CartPage.tsx';
 import CheckoutPage from './pages/CheckoutPage.tsx';
 import Products from './pages/Products.tsx';
+import Dashboard from './pages/Dashboard.tsx';
 import { CartProvider } from './context/CartContext.tsx';
 import { ToastProvider } from './context/ToastContext.tsx';
 import MiniCart from './components/MiniCart.tsx';
@@ -27,7 +28,8 @@ const AppContent = () => {
 
       <main className="flex-grow">
         <Routes>
-          <Route path="/" element={<Products />} />
+          <Route path="/" element={<Dashboard />} />
+          <Route path="/products" element={<Products />} />
           <Route path="/category" element={<Categories />} />
           <Route path="/orders" element={<Orders />} />
           <Route path="/usuarios" element={<div className="max-w-7xl mx-auto px-4 md:px-8 py-12" />} />

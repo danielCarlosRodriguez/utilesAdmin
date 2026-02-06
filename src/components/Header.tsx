@@ -19,6 +19,15 @@ const Header = ({ onNavigate }) => {
 
           <nav className="hidden md:flex items-center gap-6">
             <NavLink
+              to="/"
+              end
+              className={({ isActive }) =>
+                `text-sm font-medium transition-colors ${isActive ? 'text-primary' : 'text-slate-600 hover:text-primary'}`
+              }
+            >
+              Dashboard
+            </NavLink>
+            <NavLink
               to="/products"
               className={({ isActive }) =>
                 `text-sm font-medium transition-colors ${isActive ? 'text-primary' : 'text-slate-600 hover:text-primary'}`
