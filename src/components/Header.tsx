@@ -52,6 +52,14 @@ const Header = ({ onNavigate }) => {
               Ordenes
             </NavLink>
             <NavLink
+              to="/compras-list"
+              className={({ isActive }) =>
+                `text-sm font-medium transition-colors ${isActive ? 'text-primary' : 'text-slate-600 hover:text-primary'}`
+              }
+            >
+              Compras
+            </NavLink>
+            <NavLink
               to="/usuarios"
               className={({ isActive }) =>
                 `text-sm font-medium transition-colors ${isActive ? 'text-primary' : 'text-slate-600 hover:text-primary'}`

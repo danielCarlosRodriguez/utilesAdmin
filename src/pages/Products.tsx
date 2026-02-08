@@ -1,6 +1,7 @@
-import { useEffect, useState, useCallback, type FormEvent } from 'react';
+import { useEffect, useMemo, useState, useCallback, type FormEvent } from 'react';
 import EmptyState from '../components/EmptyState.tsx';
 import ImageUploader from '../components/ImageUploader.tsx';
+import CopyTableButton from '../components/CopyTableButton.tsx';
 import { useProducts, type Product } from '../hooks/useProducts.ts';
 import { useCategories } from '../hooks/useCategories.ts';
 import { useCreateProduct, useDeleteProduct, useUpdateProduct } from '../hooks/useProductMutations.ts';
@@ -283,18 +284,58 @@ const Products = () => {
     }
   };
 
+  const sortedProducts = useMemo(() => (
+    [...localProducts].sort((a, b) => {
+      const aValue = Number(a.refid ?? a.id);
+      const bValue = Number(b.refid ?? b.id);
+      if (Number.isFinite(aValue) && Number.isFinite(bValue)) {
+        return aValue - bValue;
+      }
+      return String(a.refid ?? a.id).localeCompare(String(b.refid ?? b.id));
+    })
+  ), [localProducts]);
+
+  const copyHeaders = [
+    'Imagen',
+    'Ref',
+    'Categoría',
+    'Descripción',
+    'Marca',
+    'Stock',
+    'Precio',
+    'Activo',
+    'Destacado',
+    'Descuento'
+  ];
+
+  const copyRows = sortedProducts.map((product) => [
+    product.image,
+    product.refid || product.id,
+    categories.find((category) => category.id === product.categoryId)?.nombre || product.category || '',
+    product.title,
+    product.brand,
+    product.stock,
+    Number.isFinite(product.price) ? product.price : '',
+    product.activo ? 'Sí' : 'No',
+    product.destacado ? 'Sí' : 'No',
+    product.descuento ?? ''
+  ]);
+
   return (
     <div className="max-w-7xl mx-auto px-4 md:px-8 py-12">
       <div className="flex items-center justify-between mb-6">
         <h2 className="text-2xl font-black text-slate-800 tracking-tight">Productos</h2>
-        <button
-          type="button"
-          onClick={openCreateModal}
-          className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-primary/90"
-        >
-          <span className="material-symbols-outlined text-sm">add</span>
-          Crear Productos
-        </button>
+        <div className="flex items-center gap-2">
+          <CopyTableButton headers={copyHeaders} rows={copyRows} />
+          <button
+            type="button"
+            onClick={openCreateModal}
+            className="inline-flex items-center gap-1.5 rounded-lg bg-primary px-3 py-1.5 text-xs font-semibold text-white shadow-sm transition hover:bg-primary/90"
+          >
+            <span className="material-symbols-outlined text-sm">add</span>
+            Crear Productos
+          </button>
+        </div>
       </div>
 
       {isLoading && (
@@ -341,16 +382,7 @@ const Products = () => {
               </tr>
             </thead>
             <tbody className="divide-y divide-gray-200">
-              {[...localProducts]
-                .sort((a, b) => {
-                  const aValue = Number(a.refid ?? a.id);
-                  const bValue = Number(b.refid ?? b.id);
-                  if (Number.isFinite(aValue) && Number.isFinite(bValue)) {
-                    return aValue - bValue;
-                  }
-                  return String(a.refid ?? a.id).localeCompare(String(b.refid ?? b.id));
-                })
-                .map((product) => (
+              {sortedProducts.map((product) => (
                 <tr key={product.id} className="hover:bg-gray-50/70">
                   <td className="px-4 py-3 border-r border-gray-200">
                     {product.image ? (
